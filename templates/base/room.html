@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ room.name }} - ScholarSync</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'home' %}">ScholarSync</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'topics' %}">Topics</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'activity' %}">Activity</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    {% if request.user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'update-user' %}">{{request.user.username}}</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'logout' %}">Logout</a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'login' %}">Login</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'register' %}">Register</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2>{{ room.name }}</h2>
+                    {% if request.user == room.host %}
+                        <div>
+                            <a href="{% url 'update-room' room.id %}" class="btn btn-sm btn-outline-primary">Edit</a>
+                            <a href="{% url 'delete-room' room.id %}" class="btn btn-sm btn-outline-danger">Delete</a>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <p><strong>Host:</strong> {{ room.host.username }}</p>
+                        <p><strong>Type:</strong> {{ room.get_study_type_display }}</p>
+                        <p><strong>Participants:</strong> {{ room.participant_count }} / {{ room.max_participants }}</p>
+                        <p><strong>Description:</strong> {{ room.description|default:"No description provided." }}</p>
+                    </div>
+                </div>
+
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h5>Discussion</h5>
+                    </div>
+                    <div class="card-body" id="chat-messages">
+                        {% for message in room_messages %}
+                            <div class="message mb-3 p-3 border rounded" id="message-{{ message.id }}">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <strong>
+                                            <a href="{% url 'user-profile' message.user.id %}" class="text-decoration-none">
+                                                {{ message.user.username }}
+                                            </a>
+                                        </strong>
+                                        <small class="text-muted ms-2">{{ message.created|timesince }} ago</small>
+                                    </div>
+                                    {% if request.user == message.user or request.user.is_superuser %}
+                                        <button class="btn btn-sm btn-outline-danger delete-btn" data-message-id="{{ message.id }}">
+                                            {% if request.user.is_superuser and request.user != message.user %}
+                                                Delete (Admin)
+                                            {% else %}
+                                                Delete
+                                            {% endif %}
+                                        </button>
+                                    {% endif %}
+                                </div>
+                                <p class="mt-2">{{ message.body }}</p>
+                                <div class="mt-2">
+                                    <button 
+                                        class="btn btn-sm {% if message.user_vote and message.user_vote.vote_type == 'like' %}btn-primary{% else %}btn-outline-primary{% endif %} like-btn"
+                                        data-message-id="{{ message.id }}"
+                                    >
+                                        👍 <span class="like-count">{{ message.votes.filter.vote_type.like.count }}</span>
+                                    </button>
+                                    <button 
+                                        class="btn btn-sm {% if message.user_vote and message.user_vote.vote_type == 'dislike' %}btn-danger{% else %}btn-outline-danger{% endif %} dislike-btn"
+                                        data-message-id="{{ message.id }}"
+                                    >
+                                        👎 <span class="dislike-count">{{ message.votes.filter.vote_type.dislike.count }}</span>
+                                    </button>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                {% if request.user.is_authenticated %}
+                    <input type="hidden" id="csrf-token" value="{{ csrf_token }}">
+                    <div class="mb-3">
+                        <textarea id="chat-message-input" class="form-control" rows="3" placeholder="Join the discussion..."></textarea>
+                    </div>
+                    <button id="chat-message-submit" class="btn btn-primary">Send</button>
+                {% else %}
+                    <p><a href="{% url 'login' %}">Login to participate in discussions</a></p>
+                {% endif %}
+            </div>
+
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">Participants ({{ participants.count }})</div>
+                    <div class="list-group list-group-flush">
+                        {% for participant in participants %}
+                            <a href="{% url 'user-profile' participant.id %}" class="list-group-item list-group-item-action">
+                                {{ participant.username }}
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DELETE CONFIRMATION MODAL -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModalLabel">Confirm Delete</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to delete this message? This action cannot be undone.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            const roomId = "{{ room.id }}";
+            const username = "{{ request.user.username }}";
+            const csrfToken = $('#csrf-token').val();
+            let chatSocket = null;
+            let currentMessageId = null;
+
+            if (username) {
+                const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const wsUrl = wsProtocol + '//' + window.location.host + '/ws/room/' + roomId + '/';
+                
+                chatSocket = new WebSocket(wsUrl);
+
+                chatSocket.onopen = function(e) {
+                    console.log("✅ WebSocket connected");
+                };
+
+                chatSocket.onmessage = function(e) {
+                    try {
+                        const data = JSON.parse(e.data);
+                        
+                        if (data.error) {
+                            alert("Error: " + data.error);
+                            return;
+                        }
+
+                        const messageDiv = `
+                            <div class="message mb-3 p-3 border rounded" id="message-${data.message_id}">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <strong>
+                                            <a href="/profile/${data.user_id}/" class="text-decoration-none">
+                                                ${data.username}
+                                            </a>
+                                        </strong>
+                                        <small class="text-muted ms-2">${new Date(data.created).toLocaleString()}</small>
+                                    </div>
+                                    ${username === data.username ? 
+                                        `<button class="btn btn-sm btn-outline-danger delete-btn" data-message-id="${data.message_id}">Delete</button>` 
+                                        : ''}
+                                </div>
+                                <p class="mt-2">${data.message}</p>
+                                <div class="mt-2">
+                                    <button class="btn btn-sm btn-outline-primary like-btn" data-message-id="${data.message_id}">
+                                        👍 <span class="like-count">0</span>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger dislike-btn" data-message-id="${data.message_id}">
+                                        👎 <span class="dislike-count">0</span>
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                        $('#chat-messages').append(messageDiv);
+                        bindButtons();
+                        $('#chat-messages').scrollTop($('#chat-messages')[0].scrollHeight);
+                    } catch (error) {
+                        console.error("Error:", error);
+                    }
+                };
+
+                chatSocket.onerror = function(error) {
+                    console.error("WebSocket error:", error);
+                };
+
+                $('#chat-message-submit').click(function() {
+                    const messageInputDom = document.querySelector('#chat-message-input');
+                    const message = messageInputDom.value;
+                    
+                    if (message.trim() === '') return;
+
+                    chatSocket.send(JSON.stringify({
+                        'message': message,
+                        'username': username,
+                        'csrfmiddlewaretoken': csrfToken
+                    }));
+
+                    messageInputDom.value = '';
+                });
+
+                $('#chat-message-input').keypress(function(e) {
+                    if (e.which === 13 && !e.shiftKey) {
+                        e.preventDefault();
+                        $('#chat-message-submit').click();
+                    }
+                });
+            }
+
+            $(document).on('click', '.delete-btn', function() {
+                currentMessageId = $(this).data('message-id');
+                const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+                modal.show();
+            });
+
+            $('#confirmDeleteBtn').click(function() {
+                if (!currentMessageId) return;
+
+                $.ajax({
+                    url: `/delete-message/${currentMessageId}/`,
+                    type: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken
+                    },
+                    success: function(response) {
+                        $(`#message-${currentMessageId}`).remove();
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('deleteModal'));
+                        modal.hide();
+                    },
+                    error: function(xhr) {
+                        alert('Error deleting message');
+                    }
+                });
+            });
+
+            function bindButtons() {
+                $('.like-btn, .dislike-btn').off('click').on('click', function() {
+                    const button = $(this);
+                    const messageId = button.data('message-id');
+                    const voteType = button.hasClass('like-btn') ? 'like' : 'dislike';
+                    
+                    $.ajax({
+                        url: `/vote/${messageId}/`,
+                        type: 'POST',
+                        headers: {
+                            'X-CSRFToken': csrfToken
+                        },
+                        data: {
+                            'vote_type': voteType
+                        },
+                        success: function(response) {
+                            const messageRow = button.closest('.message');
+                            const likeBtn = messageRow.find('.like-btn');
+                            const dislikeBtn = messageRow.find('.dislike-btn');
+                            const likeCount = messageRow.find('.like-count');
+                            const dislikeCount = messageRow.find('.dislike-count');
+                            
+                            likeCount.text(response.like_count);
+                            dislikeCount.text(response.dislike_count);
+                            
+                            likeBtn.removeClass('btn-primary').addClass('btn-outline-primary');
+                            dislikeBtn.removeClass('btn-danger').addClass('btn-outline-danger');
+                            
+                            if (response.action !== 'removed') {
+                                if (response.vote_type === 'like') {
+                                    likeBtn.removeClass('btn-outline-primary').addClass('btn-primary');
+                                } else if (response.vote_type === 'dislike') {
+                                    dislikeBtn.removeClass('btn-outline-danger').addClass('btn-danger');
+                                }
+                            }
+                        },
+                        error: function(xhr) {
+                            if (xhr.status === 401) {
+                                alert('Please login to vote!');
+                                window.location.href = '/login/';
+                            } else {
+                                alert('Error: ' + xhr.responseJSON?.error || 'Unknown error');
+                            }
+                        }
+                    });
+                });
+
+                $('.delete-btn').off('click').on('click', function() {
+                    currentMessageId = $(this).data('message-id');
+                    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+                    modal.show();
+                });
+            }
+
+            bindButtons();
+        });
+    </script>
+</body>
+</html>
