@@ -7,36 +7,36 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
-<body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+<body class="bg-dark">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-black border-bottom border-secondary">
         <div class="container">
-            <a class="navbar-brand" href="{% url 'home' %}">ScholarSync</a>
+            <a class="navbar-brand fw-bold text-primary" href="{% url 'home' %}">ScholarSync</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'topics' %}">Topics</a>
+                        <a class="nav-link text-light" href="{% url 'topics' %}">Topics</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'activity' %}">Activity</a>
+                        <a class="nav-link text-light" href="{% url 'activity' %}">Activity</a>
                     </li>
                 </ul>
                 <ul class="navbar-nav">
                     {% if request.user.is_authenticated %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'update-user' %}">{{request.user.username}}</a>
+                            <a class="nav-link text-light" href="{% url 'update-user' %}">{{request.user.username}}</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'logout' %}">Logout</a>
+                            <a class="nav-link text-light" href="{% url 'logout' %}">Logout</a>
                         </li>
                     {% else %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'login' %}">Login</a>
+                            <a class="nav-link text-light" href="{% url 'login' %}">Login</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'register' %}">Register</a>
+                            <a class="nav-link text-light" href="{% url 'register' %}">Register</a>
                         </li>
                     {% endif %}
                 </ul>
@@ -47,68 +47,95 @@
     <div class="container mt-4">
         <div class="row">
             <div class="col-md-4">
-                <div class="card text-center">
+                <div class="card bg-dark border-secondary text-center">
                     <div class="card-body">
                         {% if profile.avatar %}
-                            <img src="{{ profile.avatar.url }}" class="rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;">
+                            <img src="{{ profile.avatar.url }}" class="rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover; border: 3px solid #333;">
                         {% else %}
-                            <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center mb-3" style="width: 150px; height: 150px;">
+                            <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center mb-3" style="width: 150px; height: 150px;">
                                 <span class="display-4 text-white">{{ user.username|first|upper }}</span>
                             </div>
                         {% endif %}
-                        <h3>{{ user.username }}</h3>
-                        <p class="text-muted">{{ profile.bio|default:"No bio yet." }}</p>
-                        {% if profile.preferred_study_time %}
-                            <p><strong>Preferred Study Time:</strong> {{ profile.get_preferred_study_time_display }}</p>
+                        <h3 class="text-white mb-1">{{ user.username }}</h3>
+                        {% if user.is_superuser %}
+                            <span class="badge bg-danger mb-3">ADMIN</span>
                         {% endif %}
-                        <p><strong>Total Likes Received:</strong> {{ total_likes }}</p>
-                        <p><strong>Study Streak:</strong> {{ profile.study_streak }} days</p>
-                        <p><strong>Total Study Hours:</strong> {{ profile.total_study_hours }}</p>
+                        <p class="text-muted mb-4">{{ profile.bio|default:"No bio yet." }}</p>
+                        
+                        <div class="row text-center mb-4">
+                            <div class="col-6">
+                                <div class="fw-bold text-white">{{ total_likes }}</div>
+                                <div class="text-muted small">Likes Received</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="fw-bold text-white">{{ rooms.count }}</div>
+                                <div class="text-muted small">Rooms Created</div>
+                            </div>
+                        </div>
+                        
+                        {% if profile.preferred_study_time %}
+                            <div class="mb-3">
+                                <div class="fw-semibold text-white">Preferred Study Time</div>
+                                <div class="text-muted">{{ profile.get_preferred_study_time_display }}</div>
+                            </div>
+                        {% endif %}
+                        
                         {% if request.user == user %}
-                            <a href="{% url 'update-user' %}" class="btn btn-primary">Edit Profile</a>
+                            <a href="{% url 'update-user' %}" class="btn btn-primary mt-3">Edit Profile</a>
                         {% endif %}
                     </div>
                 </div>
             </div>
 
             <div class="col-md-8">
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h4>Rooms Created</h4>
+                <div class="card bg-dark border-secondary mb-4">
+                    <div class="card-header bg-black border-secondary">
+                        <h4 class="text-white mb-0">Rooms Created</h4>
                     </div>
                     <div class="card-body">
                         {% if rooms %}
                             {% for room in rooms %}
-                                <div class="card mb-2">
+                                <div class="card bg-dark border-secondary mb-3">
                                     <div class="card-body">
-                                        <h5 class="card-title">
-                                            <a href="{% url 'room' room.id %}" class="text-decoration-none">{{ room.name }}</a>
-                                        </h5>
-                                        <p class="card-text">{{ room.description|truncatechars:100 }}</p>
-                                        <small>{{ room.participant_count }} studying • {{ room.created|timesince }} ago</small>
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <h5 class="card-title mb-1">
+                                                    <a href="{% url 'room' room.id %}" class="text-primary text-decoration-none">{{ room.name }}</a>
+                                                </h5>
+                                                <p class="text-muted small mb-2">{{ room.description|truncatechars:80 }}</p>
+                                                <div class="d-flex gap-3">
+                                                    <small class="text-muted">👥 {{ room.participant_count }} studying</small>
+                                                    <small class="text-muted">📅 {{ room.created|timesince }} ago</small>
+                                                </div>
+                                            </div>
+                                            <span class="badge bg-secondary text-light align-self-start">{{ room.get_study_type_display }}</span>
+                                        </div>
                                     </div>
                                 </div>
                             {% endfor %}
                         {% else %}
-                            <p>This user hasn't created any rooms yet.</p>
+                            <p class="text-muted">This user hasn't created any rooms yet.</p>
                         {% endif %}
                     </div>
                 </div>
 
-                <div class="card">
-                    <div class="card-header">
-                        <h4>Recent Messages</h4>
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header bg-black border-secondary">
+                        <h4 class="text-white mb-0">Recent Messages</h4>
                     </div>
                     <div class="card-body">
                         {% if room_messages %}
                             {% for message in room_messages %}
-                                <div class="mb-3 p-2 border rounded">
-                                    <p class="mb-1">{{ message.body|truncatechars:100 }}</p>
-                                    <small class="text-muted">In <a href="{% url 'room' message.room.id %}">{{ message.room.name }}</a> • {{ message.created|timesince }} ago</small>
+                                <div class="mb-3 pb-3 border-bottom border-secondary">
+                                    <p class="text-light mb-1">{{ message.body|truncatechars:120 }}</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">In <a href="{% url 'room' message.room.id %}" class="text-primary text-decoration-none">{{ message.room.name }}</a></small>
+                                        <small class="text-muted">{{ message.created|timesince }} ago</small>
+                                    </div>
                                 </div>
                             {% endfor %}
                         {% else %}
-                            <p>No messages yet.</p>
+                            <p class="text-muted">No messages yet.</p>
                         {% endif %}
                     </div>
                 </div>

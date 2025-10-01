@@ -21,4 +21,11 @@ urlpatterns = [
     
     path('topics/', views.topicsPage, name="topics"),
     path('activity/', views.activityPage, name="activity"),
+    
+    # AJAX endpoint for polling new messages and participants
+    path('room/<str:pk>/data/', views.get_room_data, name="get-room-data"),
+    
+    # Private room functionality
+    path('join-private-room/', views.joinPrivateRoom, name="join-private-room"),
+    path('private-room-info/', views.privateRoomInfo, name="private-room-info"),
 ]

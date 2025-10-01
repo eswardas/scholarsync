@@ -1,72 +1,266 @@
-/* Global Styles */
+/* === GLOBAL RESET & TYPOGRAPHY === */
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f8f9fa;
+    background-color: #121212;
+    color: #e0e0e0;
+    line-height: 1.6;
 }
 
-/* Navbar Brand Customization */
+/* === NAVBAR === */
 .navbar-brand {
-    font-weight: bold;
+    font-weight: 700;
     font-size: 1.5rem;
+    letter-spacing: -0.5px;
+    text-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
 }
 
-/* Message Styling */
-.message {
-    transition: all 0.3s ease;
+.navbar {
+    backdrop-filter: blur(10px);
+    background-color: rgba(0, 0, 0, 0.8) !important;
 }
 
-.message:hover {
-    background-color: #f8f9fa;
-    transform: translateY(-2px);
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+/* === CONTAINERS & CARDS === */
+.container {
+    max-width: 1200px;
 }
 
-.vote-btn {
-    transition: all 0.2s ease;
-}
-
-.vote-btn.btn-primary {
-    background-color: #0d6efd;
-    border-color: #0d6efd;
-}
-
-.vote-btn.btn-primary:hover {
-    background-color: #0b5ed7;
-    border-color: #0b5ed7;
-}
-
-/* Profile Page Avatar */
-.rounded-circle {
-    overflow: hidden;
-}
-
-/* Form Styling */
-.form-control:focus {
-    border-color: #0d6efd;
-    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
-}
-
-/* Card Hover Effects */
 .card {
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    background-color: #1e1e1e;
+    border: 1px solid #333;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
 }
 
 .card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+    transform: translateY(-2px);
+    border-color: #444;
 }
 
-/* Responsive Adjustments */
+.card-header {
+    background-color: #2a2a2a;
+    border-bottom: 1px solid #3a3a3a;
+    border-radius: 16px 16px 0 0 !important;
+    padding: 16px 20px;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.card-body {
+    padding: 24px;
+}
+
+/* === BUTTONS === */
+.btn-primary {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+    background-color: #2563eb;
+    border-color: #2563eb;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.btn-outline-primary {
+    color: #3b82f6;
+    border-color: #3b82f6;
+    transition: all 0.2s ease;
+}
+
+.btn-outline-primary:hover {
+    background-color: #3b82f6;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.btn-danger {
+    background-color: #ef4444;
+    border-color: #ef4444;
+    transition: all 0.2s ease;
+}
+
+.btn-danger:hover {
+    background-color: #dc2626;
+    border-color: #dc2626;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+.btn-outline-danger {
+    color: #ef4444;
+    border-color: #ef4444;
+    transition: all 0.2s ease;
+}
+
+.btn-outline-danger:hover {
+    background-color: #ef4444;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.btn-success {
+    background-color: #10b981;
+    border-color: #10b981;
+    transition: all 0.2s ease;
+}
+
+.btn-success:hover {
+    background-color: #059669;
+    border-color: #059669;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+/* === FORM CONTROLS === */
+.form-control {
+    background-color: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 8px;
+    color: #ffffff;
+    padding: 12px 16px;
+    transition: all 0.2s;
+}
+
+.form-control:focus {
+    background-color: #333;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    color: #ffffff;
+}
+
+.form-control::placeholder {
+    color: #888;
+}
+
+/* === MESSAGES & CHAT === */
+.message {
+    background-color: #2a2a2a;
+    border: 1px solid #3a3a3a;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    transition: all 0.2s ease;
+}
+
+.message:hover {
+    background-color: #333;
+    border-color: #444;
+}
+
+/* === BADGES & LABELS === */
+.badge.bg-danger {
+    background-color: #ef4444;
+    font-weight: 500;
+    padding: 4px 8px;
+    border-radius: 6px;
+}
+
+/* === UTILITIES === */
+.text-muted {
+    color: #888 !important;
+}
+
+.rounded-circle {
+    border-radius: 50% !important;
+}
+
+.list-group-item {
+    background-color: #2a2a2a;
+    border: 1px solid #3a3a3a;
+    color: #e0e0e0;
+    padding: 16px 20px;
+    transition: all 0.2s;
+}
+
+.list-group-item:hover {
+    background-color: #333;
+    border-color: #444;
+}
+
+/* === VOTE BUTTONS === */
+.like-btn, .dislike-btn {
+    transition: all 0.2s ease;
+    border-radius: 8px;
+    font-weight: 500;
+}
+
+/* === MODAL STYLING === */
+.modal-content {
+    background-color: #1e1e1e;
+    border: 1px solid #333;
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+}
+
+.modal-header {
+    border-bottom: 1px solid #3a3a3a;
+    padding: 20px 24px;
+}
+
+.modal-footer {
+    border-top: 1px solid #3a3a3a;
+    padding: 20px 24px;
+}
+
+.btn-close {
+    filter: invert(1);
+}
+
+/* === INPUT FOCUS STATES === */
+textarea.form-control {
+    min-height: 120px;
+    resize: vertical;
+    background-color: #2a2a2a;
+    color: #ffffff;
+}
+
+/* === ALERTS === */
+.alert {
+    background-color: #2a2a2a;
+    border: 1px solid #3a3a3a;
+    color: #e0e0e0;
+}
+
+/* === LINKS === */
+a {
+    color: #3b82f6;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+a:hover {
+    color: #2563eb;
+    text-decoration: underline;
+}
+
+/* === RESPONSIVE ADJUSTMENTS === */
 @media (max-width: 768px) {
-    .navbar-nav {
-        text-align: center;
-    }
-    
     .navbar-nav .nav-item {
         margin: 5px 0;
     }
     
+    .card-body {
+        padding: 16px;
+    }
+    
     .container {
-        padding: 0 15px;
+        padding: 0 16px;
+    }
+    
+    .btn-group {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .btn-group .btn {
+        width: 100%;
     }
 }

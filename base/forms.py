@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
-from .models import Room, Message, UserProfile
+from .models import Room, Message, UserProfile, Topic  # ← Added Topic here
 
 class SignUpForm(UserCreationForm):
     email = forms.EmailField(required=True, widget=forms.EmailInput(attrs={'class': 'form-control'}))
@@ -22,10 +22,16 @@ class SignUpForm(UserCreationForm):
         user.username = user.username.lower()
         if commit:
             user.save()
-            # Create profile automatically
             UserProfile.objects.get_or_create(user=user)
         return user
+
 class RoomForm(forms.ModelForm):
+    is_private = forms.BooleanField(
+        required=False,
+        label='Make this a private room',
+        help_text='Private rooms require an ID and password to join'
+    )
+    
     class Meta:
         model = Room
         fields = ['name', 'topic', 'description', 'study_type', 'max_participants']
@@ -36,6 +42,13 @@ class RoomForm(forms.ModelForm):
             'study_type': forms.Select(attrs={'class': 'form-control'}),
             'max_participants': forms.NumberInput(attrs={'class': 'form-control'}),
         }
+    
+    def __init__(self, *args, **kwargs):
+        super(RoomForm, self).__init__(*args, **kwargs)
+        # Only show non-blank topics in the dropdown
+        self.fields['topic'].queryset = Topic.objects.exclude(name='')
+        # Add empty choice for topic
+        self.fields['topic'].choices = [('', 'Select a topic')] + [(t.id, t.name) for t in Topic.objects.exclude(name='')] + [('new', '+ Create New Topic')]
 
 class MessageForm(forms.ModelForm):
     class Meta:
@@ -45,7 +58,7 @@ class MessageForm(forms.ModelForm):
             'body': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Write your message here...'
+                'placeholder': 'Join the discussion...'
             })
         }
 

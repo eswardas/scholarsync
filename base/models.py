@@ -1,6 +1,20 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
+import os
+
+def get_file_path(instance, filename):
+    # Get file extension
+    ext = filename.split('.')[-1].lower()
+    # Define upload path based on file type
+    if ext in ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp']:
+        return f'messages/images/{instance.user.username}/{filename}'
+    elif ext in ['mp3', 'wav', 'ogg', 'm4a']:
+        return f'messages/audio/{instance.user.username}/{filename}'
+    elif ext in ['mp4', 'avi', 'mov', 'wmv', 'mkv']:
+        return f'messages/video/{instance.user.username}/{filename}'
+    else:
+        return f'messages/documents/{instance.user.username}/{filename}'
 
 class Topic(models.Model):
     name = models.CharField(max_length=200)
@@ -16,8 +30,6 @@ class Room(models.Model):
     participants = models.ManyToManyField(User, related_name='participants', blank=True)
     updated = models.DateTimeField(auto_now=True)
     created = models.DateTimeField(auto_now_add=True)
-    
-    # Study room specific fields
     is_active = models.BooleanField(default=True)
     max_participants = models.IntegerField(default=50)
     study_type = models.CharField(max_length=50, choices=[
@@ -25,6 +37,9 @@ class Room(models.Model):
         ('discussion', 'Discussion'),
         ('teaching', 'Teaching/Tutoring'),
     ], default='discussion')
+    is_private = models.BooleanField(default=False)
+    private_id = models.CharField(max_length=8, blank=True, null=True)
+    private_password = models.CharField(max_length=20, blank=True, null=True)
     
     class Meta:
         ordering = ['-updated', '-created']
@@ -35,11 +50,22 @@ class Room(models.Model):
     @property
     def participant_count(self):
         return self.participants.count()
+    
+    def get_participants_data(self):
+        participants = self.participants.all()
+        return [{
+            'id': p.id,
+            'username': p.username,
+            'is_superuser': p.is_superuser
+        } for p in participants]
 
 class Message(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     room = models.ForeignKey(Room, on_delete=models.CASCADE)
     body = models.TextField()
+    file_attachment = models.FileField(upload_to=get_file_path, null=True, blank=True)
+    file_name = models.CharField(max_length=255, blank=True, null=True)
+    file_type = models.CharField(max_length=20, blank=True, null=True)  # image, audio, video, document
     updated = models.DateTimeField(auto_now=True)
     created = models.DateTimeField(auto_now_add=True)
     
@@ -48,6 +74,24 @@ class Message(models.Model):
     
     def __str__(self):
         return self.body[0:50]
+    
+    def save(self, *args, **kwargs):
+        if self.file_attachment:
+            # Set file name
+            self.file_name = self.file_attachment.name
+            
+            # Determine file type based on extension
+            ext = self.file_attachment.name.split('.')[-1].lower()
+            if ext in ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp']:
+                self.file_type = 'image'
+            elif ext in ['mp3', 'wav', 'ogg', 'm4a']:
+                self.file_type = 'audio'
+            elif ext in ['mp4', 'avi', 'mov', 'wmv', 'mkv']:
+                self.file_type = 'video'
+            else:
+                self.file_type = 'document'
+        
+        super().save(*args, **kwargs)
 
 class Vote(models.Model):
     LIKE = 'like'
@@ -63,7 +107,7 @@ class Vote(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     
     class Meta:
-        unique_together = ('user', 'message')  # One vote per user per message
+        unique_together = ('user', 'message')
     
     def __str__(self):
         return f"{self.user.username} {self.vote_type}d {self.message.body[:20]}"

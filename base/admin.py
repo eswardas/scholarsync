@@ -40,8 +40,8 @@ class MessageAdmin(admin.ModelAdmin):
 
 @admin.register(Vote)
 class VoteAdmin(admin.ModelAdmin):
-    list_display = ['user', 'message', 'created']
-    list_filter = ['created']
+    list_display = ['user', 'message', 'vote_type', 'created']
+    list_filter = ['vote_type', 'created']
     search_fields = ['user__username']
 
 @admin.register(StudySession)

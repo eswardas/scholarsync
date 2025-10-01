@@ -7,36 +7,36 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
-<body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+<body class="bg-dark">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-black border-bottom border-secondary">
         <div class="container">
-            <a class="navbar-brand" href="{% url 'home' %}">ScholarSync</a>
+            <a class="navbar-brand fw-bold text-primary" href="{% url 'home' %}">ScholarSync</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'topics' %}">Topics</a>
+                        <a class="nav-link text-light" href="{% url 'topics' %}">Topics</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'activity' %}">Activity</a>
+                        <a class="nav-link text-light" href="{% url 'activity' %}">Activity</a>
                     </li>
                 </ul>
                 <ul class="navbar-nav">
                     {% if request.user.is_authenticated %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'update-user' %}">{{request.user.username}}</a>
+                            <a class="nav-link text-light" href="{% url 'update-user' %}">{{request.user.username}}</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'logout' %}">Logout</a>
+                            <a class="nav-link text-light" href="{% url 'logout' %}">Logout</a>
                         </li>
                     {% else %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'login' %}">Login</a>
+                            <a class="nav-link text-light" href="{% url 'login' %}">Login</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'register' %}">Register</a>
+                            <a class="nav-link text-light" href="{% url 'register' %}">Register</a>
                         </li>
                     {% endif %}
                 </ul>
@@ -47,89 +47,150 @@
     <div class="container mt-4">
         <div class="row">
             <div class="col-md-8">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h2>{{ room.name }}</h2>
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2 class="text-white mb-0">{{ room.name }}</h2>
+                        <small class="text-muted">{{ room.get_study_type_display }} • {{ room.topic.name }}</small>
+                        {% if room.is_private %}
+                            <span class="badge bg-warning text-dark ms-2">PRIVATE</span>
+                        {% endif %}
+                    </div>
                     {% if request.user == room.host %}
-                        <div>
+                        <div class="btn-group">
                             <a href="{% url 'update-room' room.id %}" class="btn btn-sm btn-outline-primary">Edit</a>
                             <a href="{% url 'delete-room' room.id %}" class="btn btn-sm btn-outline-danger">Delete</a>
                         </div>
                     {% endif %}
                 </div>
                 
-                <div class="card mb-3">
+                <div class="card bg-dark border-secondary mb-4">
                     <div class="card-body">
-                        <p><strong>Host:</strong> {{ room.host.username }}</p>
-                        <p><strong>Type:</strong> {{ room.get_study_type_display }}</p>
-                        <p><strong>Participants:</strong> {{ room.participant_count }} / {{ room.max_participants }}</p>
-                        <p><strong>Description:</strong> {{ room.description|default:"No description provided." }}</p>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="text-light mb-2"><strong>Host:</strong> {{ room.host.username }}</p>
+                                <p class="text-light mb-0"><strong>Participants:</strong> <span id="participant-count">{{ room.participant_count }}</span> / {{ room.max_participants }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="text-light mb-2"><strong>Created:</strong> {{ room.created|timesince }} ago</p>
+                                <p class="text-light mb-0"><strong>Last Active:</strong> {{ room.updated|timesince }} ago</p>
+                            </div>
+                        </div>
+                        {% if room.description %}
+                            <hr class="border-secondary">
+                            <p class="text-light mb-0"><strong>Description:</strong> {{ room.description }}</p>
+                        {% endif %}
+                        {% if room.is_private %}
+                            <hr class="border-secondary">
+                            <p class="text-light mb-0"><strong>Room ID:</strong> {{ room.private_id }}</p>
+                            <p class="text-light mb-0"><strong>Password:</strong> {{ room.private_password }}</p>
+                        {% endif %}
                     </div>
                 </div>
 
-                <div class="card mb-3">
-                    <div class="card-header">
-                        <h5>Discussion</h5>
+                <div class="card bg-dark border-secondary mb-4">
+                    <div class="card-header bg-black border-secondary">
+                        <h5 class="text-white mb-0">Discussion</h5>
                     </div>
-                    <div class="card-body" id="chat-messages">
-                        {% for message in room_messages %}
-                            <div class="message mb-3 p-3 border rounded" id="message-{{ message.id }}">
-                                <div class="d-flex justify-content-between">
-                                    <div>
-                                        <strong>
-                                            <a href="{% url 'user-profile' message.user.id %}" class="text-decoration-none">
-                                                {{ message.user.username }}
-                                            </a>
-                                        </strong>
-                                        <small class="text-muted ms-2">{{ message.created|timesince }} ago</small>
+                    <div class="card-body p-0">
+                        <div class="p-3" id="chat-messages" style="max-height: 500px; overflow-y: auto;">
+                            {% for message in room_messages %}
+                                <div class="message bg-black border border-secondary rounded p-3 mb-3" id="message-{{ message.id }}" data-message-id="{{ message.id }}">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div class="d-flex align-items-center">
+                                            <strong>
+                                                <a href="{% url 'user-profile' message.user.id %}" class="text-primary text-decoration-none">
+                                                    {{ message.user.username }}
+                                                </a>
+                                            </strong>
+                                            <small class="text-muted ms-2">{{ message.created|timesince }} ago</small>
+                                        </div>
+                                        {% if request.user == message.user or request.user.is_superuser %}
+                                            <button class="btn btn-sm btn-outline-danger delete-btn" data-message-id="{{ message.id }}">
+                                                {% if request.user.is_superuser and request.user != message.user %}Delete (Admin){% else %}Delete{% endif %}
+                                            </button>
+                                        {% endif %}
                                     </div>
-                                    {% if request.user == message.user or request.user.is_superuser %}
-                                        <button class="btn btn-sm btn-outline-danger delete-btn" data-message-id="{{ message.id }}">
-                                            {% if request.user.is_superuser and request.user != message.user %}
-                                                Delete (Admin)
+                                    <p class="text-light mb-2">{{ message.body }}</p>
+                                    
+                                    <!-- File attachments -->
+                                    {% if message.file_attachment %}
+                                        <div class="mb-2">
+                                            {% if message.file_type == 'image' %}
+                                                <img src="{{ message.file_attachment.url }}" class="img-fluid rounded" style="max-height: 300px;">
+                                            {% elif message.file_type == 'audio' %}
+                                                <audio controls class="w-100">
+                                                    <source src="{{ message.file_attachment.url }}" type="audio/mpeg">
+                                                    Your browser does not support the audio element.
+                                                </audio>
+                                            {% elif message.file_type == 'video' %}
+                                                <video controls class="w-100" style="max-height: 300px;">
+                                                    <source src="{{ message.file_attachment.url }}" type="video/mp4">
+                                                    Your browser does not support the video element.
+                                                </video>
                                             {% else %}
-                                                Delete
+                                                <a href="{{ message.file_attachment.url }}" class="btn btn-outline-primary" download>
+                                                    📄 Download {{ message.file_name }}
+                                                </a>
                                             {% endif %}
-                                        </button>
+                                        </div>
                                     {% endif %}
+                                    
+                                    <div class="d-flex gap-2">
+                                        <button 
+                                            class="btn btn-sm {% if message.user_vote and message.user_vote.vote_type == 'like' %}btn-primary{% else %}btn-outline-primary{% endif %} like-btn"
+                                            data-message-id="{{ message.id }}"
+                                        >
+                                            👍 <span class="like-count">{{ message.votes.filter.vote_type.like.count }}</span>
+                                        </button>
+                                        <button 
+                                            class="btn btn-sm {% if message.user_vote and message.user_vote.vote_type == 'dislike' %}btn-danger{% else %}btn-outline-danger{% endif %} dislike-btn"
+                                            data-message-id="{{ message.id }}"
+                                        >
+                                            👎 <span class="dislike-count">{{ message.votes.filter.vote_type.dislike.count }}</span>
+                                        </button>
+                                    </div>
                                 </div>
-                                <p class="mt-2">{{ message.body }}</p>
-                                <div class="mt-2">
-                                    <button 
-                                        class="btn btn-sm {% if message.user_vote and message.user_vote.vote_type == 'like' %}btn-primary{% else %}btn-outline-primary{% endif %} like-btn"
-                                        data-message-id="{{ message.id }}"
-                                    >
-                                        👍 <span class="like-count">{{ message.votes.filter.vote_type.like.count }}</span>
-                                    </button>
-                                    <button 
-                                        class="btn btn-sm {% if message.user_vote and message.user_vote.vote_type == 'dislike' %}btn-danger{% else %}btn-outline-danger{% endif %} dislike-btn"
-                                        data-message-id="{{ message.id }}"
-                                    >
-                                        👎 <span class="dislike-count">{{ message.votes.filter.vote_type.dislike.count }}</span>
-                                    </button>
-                                </div>
-                            </div>
-                        {% endfor %}
+                            {% endfor %}
+                        </div>
                     </div>
                 </div>
 
                 {% if request.user.is_authenticated %}
                     <input type="hidden" id="csrf-token" value="{{ csrf_token }}">
-                    <div class="mb-3">
-                        <textarea id="chat-message-input" class="form-control" rows="3" placeholder="Join the discussion..."></textarea>
+                    <div class="card bg-dark border-secondary">
+                        <div class="card-body">
+                            <form id="message-form" method="POST" enctype="multipart/form-data">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <textarea name="body" id="chat-message-input" class="form-control bg-black text-light border-secondary" placeholder="Share your thoughts..." rows="3"></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="file_attachment" class="form-label text-light">Attach File (PDF, Image, Video, Audio)</label>
+                                    <input type="file" class="form-control bg-dark text-light border-secondary" id="file_attachment" name="file_attachment">
+                                </div>
+                                <button type="submit" id="chat-message-submit" class="btn btn-primary w-100">Send Message</button>
+                            </form>
+                        </div>
                     </div>
-                    <button id="chat-message-submit" class="btn btn-primary">Send</button>
                 {% else %}
-                    <p><a href="{% url 'login' %}">Login to participate in discussions</a></p>
+                    <div class="alert alert-warning bg-dark border-warning text-warning">
+                        <p class="mb-0">Please <a href="{% url 'login' %}" class="text-primary">login</a> to participate in discussions.</p>
+                    </div>
                 {% endif %}
             </div>
 
             <div class="col-md-4">
-                <div class="card">
-                    <div class="card-header">Participants ({{ participants.count }})</div>
-                    <div class="list-group list-group-flush">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header bg-black border-secondary">
+                        <h5 class="text-white mb-0">Participants (<span id="participants-count-display">{{ participants.count }}</span>)</h5>
+                    </div>
+                    <div class="list-group list-group-flush" id="participants-list">
                         {% for participant in participants %}
-                            <a href="{% url 'user-profile' participant.id %}" class="list-group-item list-group-item-action">
+                            <a href="{% url 'user-profile' participant.id %}" class="list-group-item list-group-item-action bg-dark text-light border-secondary d-flex justify-content-between align-items-center">
                                 {{ participant.username }}
+                                {% if participant.is_superuser %}
+                                    <span class="badge bg-danger">ADMIN</span>
+                                {% endif %}
                             </a>
                         {% endfor %}
                     </div>
@@ -141,17 +202,18 @@
     <!-- DELETE CONFIRMATION MODAL -->
     <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
         <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="deleteModalLabel">Confirm Delete</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-content bg-dark text-light">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title" id="deleteModalLabel">Confirm Deletion</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    Are you sure you want to delete this message? This action cannot be undone.
+                    <p>Are you sure you want to delete this message?</p>
+                    <p class="text-muted small">This action cannot be undone.</p>
                 </div>
-                <div class="modal-footer">
+                <div class="modal-footer border-secondary">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete Message</button>
                 </div>
             </div>
         </div>
@@ -162,91 +224,138 @@
     <script>
         $(document).ready(function() {
             const roomId = "{{ room.id }}";
-            const username = "{{ request.user.username }}";
             const csrfToken = $('#csrf-token').val();
-            let chatSocket = null;
             let currentMessageId = null;
-
-            if (username) {
-                const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-                const wsUrl = wsProtocol + '//' + window.location.host + '/ws/room/' + roomId + '/';
-                
-                chatSocket = new WebSocket(wsUrl);
-
-                chatSocket.onopen = function(e) {
-                    console.log("✅ WebSocket connected");
-                };
-
-                chatSocket.onmessage = function(e) {
-                    try {
-                        const data = JSON.parse(e.data);
-                        
-                        if (data.error) {
-                            alert("Error: " + data.error);
-                            return;
-                        }
-
-                        const messageDiv = `
-                            <div class="message mb-3 p-3 border rounded" id="message-${data.message_id}">
-                                <div class="d-flex justify-content-between">
-                                    <div>
-                                        <strong>
-                                            <a href="/profile/${data.user_id}/" class="text-decoration-none">
-                                                ${data.username}
-                                            </a>
-                                        </strong>
-                                        <small class="text-muted ms-2">${new Date(data.created).toLocaleString()}</small>
-                                    </div>
-                                    ${username === data.username ? 
-                                        `<button class="btn btn-sm btn-outline-danger delete-btn" data-message-id="${data.message_id}">Delete</button>` 
-                                        : ''}
-                                </div>
-                                <p class="mt-2">${data.message}</p>
-                                <div class="mt-2">
-                                    <button class="btn btn-sm btn-outline-primary like-btn" data-message-id="${data.message_id}">
-                                        👍 <span class="like-count">0</span>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger dislike-btn" data-message-id="${data.message_id}">
-                                        👎 <span class="dislike-count">0</span>
-                                    </button>
-                                </div>
-                            </div>
-                        `;
-                        $('#chat-messages').append(messageDiv);
-                        bindButtons();
-                        $('#chat-messages').scrollTop($('#chat-messages')[0].scrollHeight);
-                    } catch (error) {
-                        console.error("Error:", error);
-                    }
-                };
-
-                chatSocket.onerror = function(error) {
-                    console.error("WebSocket error:", error);
-                };
-
-                $('#chat-message-submit').click(function() {
-                    const messageInputDom = document.querySelector('#chat-message-input');
-                    const message = messageInputDom.value;
-                    
-                    if (message.trim() === '') return;
-
-                    chatSocket.send(JSON.stringify({
-                        'message': message,
-                        'username': username,
-                        'csrfmiddlewaretoken': csrfToken
-                    }));
-
-                    messageInputDom.value = '';
-                });
-
-                $('#chat-message-input').keypress(function(e) {
-                    if (e.which === 13 && !e.shiftKey) {
-                        e.preventDefault();
-                        $('#chat-message-submit').click();
-                    }
-                });
+            let lastMessageId = 0;
+            
+            // Get the last message ID on page load
+            const messages = $('.message');
+            if (messages.length > 0) {
+                lastMessageId = Math.max(...messages.map(function() {
+                    return parseInt($(this).data('message-id'));
+                }).get());
             }
 
+            // Poll for new data every 3 seconds (messages and participants)
+            setInterval(function() {
+                $.ajax({
+                    url: `/room/${roomId}/data/`,
+                    type: 'GET',
+                    data: { 'last_id': lastMessageId },
+                    success: function(response) {
+                        // Update messages
+                        if (response.messages && response.messages.length > 0) {
+                            response.messages.forEach(function(msg) {
+                                // Check if message already exists
+                                if($(`#message-${msg.id}`).length === 0) {
+                                    let fileHtml = '';
+                                    if(msg.file_attachment) {
+                                        if(msg.file_type === 'image') {
+                                            fileHtml = `<div class="mb-2"><img src="${msg.file_attachment}" class="img-fluid rounded" style="max-height: 300px;"></div>`;
+                                        } else if(msg.file_type === 'audio') {
+                                            fileHtml = `<div class="mb-2"><audio controls class="w-100"><source src="${msg.file_attachment}" type="audio/mpeg">Your browser does not support the audio element.</audio></div>`;
+                                        } else if(msg.file_type === 'video') {
+                                            fileHtml = `<div class="mb-2"><video controls class="w-100" style="max-height: 300px;"><source src="${msg.file_attachment}" type="video/mp4">Your browser does not support the video element.</video></div>`;
+                                        } else {
+                                            fileHtml = `<div class="mb-2"><a href="${msg.file_attachment}" class="btn btn-outline-primary" download>📄 Download ${msg.file_name}</a></div>`;
+                                        }
+                                    }
+                                    
+                                    const messageHtml = `
+                                        <div class="message bg-black border border-secondary rounded p-3 mb-3" id="message-${msg.id}" data-message-id="${msg.id}">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <div class="d-flex align-items-center">
+                                                    <strong>
+                                                        <a href="/profile/${msg.user_id}/" class="text-primary text-decoration-none">
+                                                            ${msg.username}
+                                                        </a>
+                                                    </strong>
+                                                    <small class="text-muted ms-2">just now</small>
+                                                </div>
+                                                ${msg.is_owner || msg.is_admin ? 
+                                                    `<button class="btn btn-sm btn-outline-danger delete-btn" data-message-id="${msg.id}">
+                                                        ${msg.is_admin && !msg.is_owner ? 'Delete (Admin)' : 'Delete'}
+                                                    </button>` 
+                                                    : ''}
+                                            </div>
+                                            <p class="text-light mb-2">${msg.body}</p>
+                                            ${fileHtml}
+                                            <div class="d-flex gap-2">
+                                                <button class="btn btn-sm ${msg.user_vote === 'like' ? 'btn-primary' : 'btn-outline-primary'} like-btn" data-message-id="${msg.id}">
+                                                    👍 <span class="like-count">${msg.like_count}</span>
+                                                </button>
+                                                <button class="btn btn-sm ${msg.user_vote === 'dislike' ? 'btn-danger' : 'btn-outline-danger'} dislike-btn" data-message-id="${msg.id}">
+                                                    👎 <span class="dislike-count">${msg.dislike_count}</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    `;
+                                    $('#chat-messages').append(messageHtml);
+                                }
+                            });
+                            
+                            lastMessageId = response.last_id;
+                            $('#chat-messages').scrollTop($('#chat-messages')[0].scrollHeight);
+                            bindButtons();
+                        }
+                        
+                        // Update participants list
+                        if (response.participants) {
+                            const participantsList = $('#participants-list');
+                            const participantsCount = response.participants.length;
+                            
+                            // Clear current list
+                            participantsList.empty();
+                            
+                            // Add updated participants
+                            response.participants.forEach(function(participant) {
+                                const participantHtml = `
+                                    <a href="/profile/${participant.id}/" class="list-group-item list-group-item-action bg-dark text-light border-secondary d-flex justify-content-between align-items-center">
+                                        ${participant.username}
+                                        ${participant.is_superuser ? '<span class="badge bg-danger">ADMIN</span>' : ''}
+                                    </a>
+                                `;
+                                participantsList.append(participantHtml);
+                            });
+                            
+                            // Update participant count displays
+                            $('#participant-count').text(participantsCount);
+                            $('#participants-count-display').text(participantsCount);
+                        }
+                    }
+                });
+            }, 3000);
+
+            // Handle message form submission
+            $('#message-form').submit(function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(this);
+                const messageInput = $('#chat-message-input');
+                const message = messageInput.val().trim();
+                
+                if (message === '' && !formData.get('file_attachment')) {
+                    alert('Please enter a message or attach a file');
+                    return;
+                }
+                
+                $.ajax({
+                    url: window.location.href,
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function() {
+                        messageInput.val('');
+                        $('#file_attachment').val('');
+                    },
+                    error: function() {
+                        alert('Error sending message');
+                    }
+                });
+            });
+
+            // Delete button handler
             $(document).on('click', '.delete-btn', function() {
                 currentMessageId = $(this).data('message-id');
                 const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
@@ -263,7 +372,9 @@
                         'X-CSRFToken': csrfToken
                     },
                     success: function(response) {
-                        $(`#message-${currentMessageId}`).remove();
+                        $(`#message-${currentMessageId}`).fadeOut(300, function() {
+                            $(this).remove();
+                        });
                         const modal = bootstrap.Modal.getInstance(document.getElementById('deleteModal'));
                         modal.hide();
                     },
@@ -273,6 +384,7 @@
                 });
             });
 
+            // Vote button handlers
             function bindButtons() {
                 $('.like-btn, .dislike-btn').off('click').on('click', function() {
                     const button = $(this);
@@ -298,8 +410,8 @@
                             likeCount.text(response.like_count);
                             dislikeCount.text(response.dislike_count);
                             
-                            likeBtn.removeClass('btn-primary').addClass('btn-outline-primary');
-                            dislikeBtn.removeClass('btn-danger').addClass('btn-outline-danger');
+                            likeBtn.removeClass('btn-primary btn-danger').addClass('btn-outline-primary');
+                            dislikeBtn.removeClass('btn-primary btn-danger').addClass('btn-outline-danger');
                             
                             if (response.action !== 'removed') {
                                 if (response.vote_type === 'like') {
@@ -327,6 +439,7 @@
                 });
             }
 
+            // Initial binding
             bindButtons();
         });
     </script>
