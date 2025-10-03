@@ -219,229 +219,214 @@
         </div>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        $(document).ready(function() {
-            const roomId = "{{ room.id }}";
-            const csrfToken = $('#csrf-token').val();
-            let currentMessageId = null;
-            let lastMessageId = 0;
-            
-            // Get the last message ID on page load
-            const messages = $('.message');
-            if (messages.length > 0) {
-                lastMessageId = Math.max(...messages.map(function() {
-                    return parseInt($(this).data('message-id'));
-                }).get());
-            }
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    $(function () {
+        const roomId = "{{ room.id }}";
+        const csrfToken = $('#csrf-token').val();
+        let currentMessageId = null;
+        let lastMessageId = 0;
 
-            // Poll for new data every 3 seconds (messages and participants)
-            setInterval(function() {
-                $.ajax({
-                    url: `/room/${roomId}/data/`,
-                    type: 'GET',
-                    data: { 'last_id': lastMessageId },
-                    success: function(response) {
-                        // Update messages
-                        if (response.messages && response.messages.length > 0) {
-                            response.messages.forEach(function(msg) {
-                                // Check if message already exists
-                                if($(`#message-${msg.id}`).length === 0) {
-                                    let fileHtml = '';
-                                    if(msg.file_attachment) {
-                                        if(msg.file_type === 'image') {
-                                            fileHtml = `<div class="mb-2"><img src="${msg.file_attachment}" class="img-fluid rounded" style="max-height: 300px;"></div>`;
-                                        } else if(msg.file_type === 'audio') {
-                                            fileHtml = `<div class="mb-2"><audio controls class="w-100"><source src="${msg.file_attachment}" type="audio/mpeg">Your browser does not support the audio element.</audio></div>`;
-                                        } else if(msg.file_type === 'video') {
-                                            fileHtml = `<div class="mb-2"><video controls class="w-100" style="max-height: 300px;"><source src="${msg.file_attachment}" type="video/mp4">Your browser does not support the video element.</video></div>`;
-                                        } else {
-                                            fileHtml = `<div class="mb-2"><a href="${msg.file_attachment}" class="btn btn-outline-primary" download>📄 Download ${msg.file_name}</a></div>`;
-                                        }
-                                    }
-                                    
-                                    const messageHtml = `
-                                        <div class="message bg-black border border-secondary rounded p-3 mb-3" id="message-${msg.id}" data-message-id="${msg.id}">
-                                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                                <div class="d-flex align-items-center">
-                                                    <strong>
-                                                        <a href="/profile/${msg.user_id}/" class="text-primary text-decoration-none">
-                                                            ${msg.username}
-                                                        </a>
-                                                    </strong>
-                                                    <small class="text-muted ms-2">just now</small>
-                                                </div>
-                                                ${msg.is_owner || msg.is_admin ? 
-                                                    `<button class="btn btn-sm btn-outline-danger delete-btn" data-message-id="${msg.id}">
-                                                        ${msg.is_admin && !msg.is_owner ? 'Delete (Admin)' : 'Delete'}
-                                                    </button>` 
-                                                    : ''}
-                                            </div>
-                                            <p class="text-light mb-2">${msg.body}</p>
-                                            ${fileHtml}
-                                            <div class="d-flex gap-2">
-                                                <button class="btn btn-sm ${msg.user_vote === 'like' ? 'btn-primary' : 'btn-outline-primary'} like-btn" data-message-id="${msg.id}">
-                                                    👍 <span class="like-count">${msg.like_count}</span>
-                                                </button>
-                                                <button class="btn btn-sm ${msg.user_vote === 'dislike' ? 'btn-danger' : 'btn-outline-danger'} dislike-btn" data-message-id="${msg.id}">
-                                                    👎 <span class="dislike-count">${msg.dislike_count}</span>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    `;
-                                    $('#chat-messages').append(messageHtml);
-                                }
-                            });
-                            
-                            lastMessageId = response.last_id;
-                            $('#chat-messages').scrollTop($('#chat-messages')[0].scrollHeight);
-                            bindButtons();
-                        }
-                        
-                        // Update participants list
-                        if (response.participants) {
-                            const participantsList = $('#participants-list');
-                            const participantsCount = response.participants.length;
-                            
-                            // Clear current list
-                            participantsList.empty();
-                            
-                            // Add updated participants
-                            response.participants.forEach(function(participant) {
-                                const participantHtml = `
-                                    <a href="/profile/${participant.id}/" class="list-group-item list-group-item-action bg-dark text-light border-secondary d-flex justify-content-between align-items-center">
-                                        ${participant.username}
-                                        ${participant.is_superuser ? '<span class="badge bg-danger">ADMIN</span>' : ''}
-                                    </a>
-                                `;
-                                participantsList.append(participantHtml);
-                            });
-                            
-                            // Update participant count displays
-                            $('#participant-count').text(participantsCount);
-                            $('#participants-count-display').text(participantsCount);
-                        }
-                    }
-                });
-            }, 3000);
+        // Reuse a single modal instance
+        const deleteModalEl = document.getElementById('deleteModal');
+        const deleteModal = bootstrap.Modal.getOrCreateInstance(deleteModalEl, { backdrop: true, keyboard: true });
 
-            // Handle message form submission
-            $('#message-form').submit(function(e) {
-                e.preventDefault();
-                
-                const formData = new FormData(this);
-                const messageInput = $('#chat-message-input');
-                const message = messageInput.val().trim();
-                
-                if (message === '' && !formData.get('file_attachment')) {
-                    alert('Please enter a message or attach a file');
-                    return;
-                }
-                
-                $.ajax({
-                    url: window.location.href,
-                    type: 'POST',
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    success: function() {
-                        messageInput.val('');
-                        $('#file_attachment').val('');
-                    },
-                    error: function() {
-                        alert('Error sending message');
-                    }
-                });
-            });
+        // Helper: safely hide modal and clean backdrops/body
+        function safeHideModal() {
+            try { deleteModal.hide(); } catch (e) {}
+            setTimeout(function () {
+                $('.modal-backdrop').remove();
+                $('body').removeClass('modal-open').css('padding-right', '');
+                $(deleteModalEl).attr('style', '');
+            }, 120);
+        }
 
-            // Delete button handler
-            $(document).on('click', '.delete-btn', function() {
-                currentMessageId = $(this).data('message-id');
-                const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
-                modal.show();
-            });
-
-            $('#confirmDeleteBtn').click(function() {
-                if (!currentMessageId) return;
-
-                $.ajax({
-                    url: `/delete-message/${currentMessageId}/`,
-                    type: 'POST',
-                    headers: {
-                        'X-CSRFToken': csrfToken
-                    },
-                    success: function(response) {
-                        $(`#message-${currentMessageId}`).fadeOut(300, function() {
-                            $(this).remove();
-                        });
-                        const modal = bootstrap.Modal.getInstance(document.getElementById('deleteModal'));
-                        modal.hide();
-                    },
-                    error: function(xhr) {
-                        alert('Error deleting message');
-                    }
-                });
-            });
-
-            // Vote button handlers
-            function bindButtons() {
-                $('.like-btn, .dislike-btn').off('click').on('click', function() {
-                    const button = $(this);
-                    const messageId = button.data('message-id');
-                    const voteType = button.hasClass('like-btn') ? 'like' : 'dislike';
-                    
-                    $.ajax({
-                        url: `/vote/${messageId}/`,
-                        type: 'POST',
-                        headers: {
-                            'X-CSRFToken': csrfToken
-                        },
-                        data: {
-                            'vote_type': voteType
-                        },
-                        success: function(response) {
-                            const messageRow = button.closest('.message');
-                            const likeBtn = messageRow.find('.like-btn');
-                            const dislikeBtn = messageRow.find('.dislike-btn');
-                            const likeCount = messageRow.find('.like-count');
-                            const dislikeCount = messageRow.find('.dislike-count');
-                            
-                            likeCount.text(response.like_count);
-                            dislikeCount.text(response.dislike_count);
-                            
-                            likeBtn.removeClass('btn-primary btn-danger').addClass('btn-outline-primary');
-                            dislikeBtn.removeClass('btn-primary btn-danger').addClass('btn-outline-danger');
-                            
-                            if (response.action !== 'removed') {
-                                if (response.vote_type === 'like') {
-                                    likeBtn.removeClass('btn-outline-primary').addClass('btn-primary');
-                                } else if (response.vote_type === 'dislike') {
-                                    dislikeBtn.removeClass('btn-outline-danger').addClass('btn-danger');
-                                }
-                            }
-                        },
-                        error: function(xhr) {
-                            if (xhr.status === 401) {
-                                alert('Please login to vote!');
-                                window.location.href = '/login/';
-                            } else {
-                                alert('Error: ' + xhr.responseJSON?.error || 'Unknown error');
-                            }
-                        }
-                    });
-                });
-
-                $('.delete-btn').off('click').on('click', function() {
-                    currentMessageId = $(this).data('message-id');
-                    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
-                    modal.show();
-                });
-            }
-
-            // Initial binding
-            bindButtons();
+        // When modal fully hidden, reset state
+        deleteModalEl.addEventListener('hidden.bs.modal', function () {
+            currentMessageId = null;
+            $('#confirmDeleteBtn').prop('disabled', false).text('Delete Message');
         });
-    </script>
+
+        // Compute last message id on load
+        const $messages = $('.message');
+        if ($messages.length > 0) {
+            lastMessageId = Math.max(...$messages.map(function () {
+                return parseInt($(this).data('message-id'));
+            }).get());
+        }
+
+        // Open confirm modal
+        $(document).on('click', '.delete-btn', function () {
+            currentMessageId = $(this).data('message-id');
+            deleteModal.show();
+        });
+
+        // Poll new messages/participants
+        setInterval(function () {
+            $.ajax({
+                url: `/room/${roomId}/data/`,
+                type: 'GET',
+                data: { last_id: lastMessageId },
+                success: function (response) {
+                    if (response.messages && response.messages.length > 0) {
+                        response.messages.forEach(function (msg) {
+                            if ($(`#message-${msg.id}`).length === 0) {
+                                let fileHtml = '';
+                                if (msg.file_attachment) {
+                                    if (msg.file_type === 'image') {
+                                        fileHtml = `<div class="mb-2"><img src="${msg.file_attachment}" class="img-fluid rounded" style="max-height:300px;"></div>`;
+                                    } else if (msg.file_type === 'audio') {
+                                        fileHtml = `<div class="mb-2"><audio controls class="w-100"><source src="${msg.file_attachment}" type="audio/mpeg"></audio></div>`;
+                                    } else if (msg.file_type === 'video') {
+                                        fileHtml = `<div class="mb-2"><video controls class="w-100" style="max-height:300px;"><source src="${msg.file_attachment}" type="video/mp4"></video></div>`;
+                                    } else {
+                                        fileHtml = `<div class="mb-2"><a class="btn btn-outline-primary" href="${msg.file_attachment}" download>📄 Download ${msg.file_name}</a></div>`;
+                                    }
+                                }
+
+                                const html = `
+                                    <div class="message bg-black border border-secondary rounded p-3 mb-3" id="message-${msg.id}" data-message-id="${msg.id}">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <div class="d-flex align-items-center">
+                                                <strong><a href="/profile/${msg.user_id}/" class="text-primary text-decoration-none">${msg.username}</a></strong>
+                                                <small class="text-muted ms-2">just now</small>
+                                            </div>
+                                            ${(msg.is_owner || msg.is_admin) ? `
+                                                <button class="btn btn-sm btn-outline-danger delete-btn" data-message-id="${msg.id}">
+                                                    ${(msg.is_admin && !msg.is_owner) ? 'Delete (Admin)' : 'Delete'}
+                                                </button>` : ``}
+                                        </div>
+                                        <p class="text-light mb-2">${msg.body || ''}</p>
+                                        ${fileHtml}
+                                        <div class="d-flex gap-2">
+                                            <button class="btn btn-sm ${msg.user_vote === 'like' ? 'btn-primary' : 'btn-outline-primary'} like-btn" data-message-id="${msg.id}">
+                                                👍 <span class="like-count">${msg.like_count}</span>
+                                            </button>
+                                            <button class="btn btn-sm ${msg.user_vote === 'dislike' ? 'btn-danger' : 'btn-outline-danger'} dislike-btn" data-message-id="${msg.id}">
+                                                👎 <span class="dislike-count">${msg.dislike_count}</span>
+                                            </button>
+                                        </div>
+                                    </div>`;
+                                $('#chat-messages').append(html);
+                            }
+                        });
+                        lastMessageId = response.last_id;
+                        $('#chat-messages').scrollTop($('#chat-messages')[0].scrollHeight);
+                    }
+
+                    if (response.participants) {
+                        const $list = $('#participants-list');
+                        $list.empty();
+                        response.participants.forEach(function (p) {
+                            $list.append(`
+                                <a href="/profile/${p.id}/" class="list-group-item list-group-item-action bg-dark text-light border-secondary d-flex justify-content-between align-items-center">
+                                    ${p.username}
+                                    ${p.is_superuser ? '<span class="badge bg-danger">ADMIN</span>' : ''}
+                                </a>`);
+                        });
+                        $('#participant-count').text(response.participants.length);
+                        $('#participants-count-display').text(response.participants.length);
+                    }
+                }
+            });
+        }, 2000);
+
+        // Send message
+        $('#message-form').on('submit', function (e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const text = ($('#chat-message-input').val() || '').trim();
+            const hasFile = !!formData.get('file_attachment');
+
+            if (!text && !hasFile) {
+                alert('Please enter a message or attach a file');
+                return;
+            }
+
+            $.ajax({
+                url: window.location.href,
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function () {
+                    $('#chat-message-input').val('');
+                    $('#file_attachment').val('');
+                },
+                error: function () {
+                    alert('Error sending message');
+                }
+            });
+        });
+
+        // Confirm delete
+        $('#confirmDeleteBtn').on('click', function () {
+            if (!currentMessageId) return;
+            const $btn = $(this).prop('disabled', true).text('Deleting...');
+
+            $.ajax({
+                url: `/delete-message/${currentMessageId}/`,
+                type: 'POST',
+                headers: { 'X-CSRFToken': csrfToken },
+                success: function () {
+                    // Remove the message immediately
+                    $(`#message-${currentMessageId}`).fadeOut(120, function () {
+                        $(this).remove();
+                    });
+                    safeHideModal();
+                    currentMessageId = null;
+                    $btn.prop('disabled', false).text('Delete Message');
+                },
+                error: function () {
+                    alert('Error deleting message');
+                    safeHideModal();
+                    $btn.prop('disabled', false).text('Delete Message');
+                }
+            });
+        });
+
+        // Like/Dislike (delegated)
+        $(document).on('click', '.like-btn, .dislike-btn', function () {
+            const $btn = $(this);
+            const id = $btn.data('message-id');
+            const voteType = $btn.hasClass('like-btn') ? 'like' : 'dislike';
+
+            $.ajax({
+                url: `/vote/${id}/`,
+                type: 'POST',
+                headers: { 'X-CSRFToken': csrfToken },
+                data: { vote_type: voteType },
+                success: function (res) {
+                    const $row = $btn.closest('.message');
+                    const $likeBtn = $row.find('.like-btn');
+                    const $dislikeBtn = $row.find('.dislike-btn');
+
+                    $row.find('.like-count').text(res.like_count);
+                    $row.find('.dislike-count').text(res.dislike_count);
+
+                    $likeBtn.removeClass('btn-primary').addClass('btn-outline-primary');
+                    $dislikeBtn.removeClass('btn-danger').addClass('btn-outline-danger');
+
+                    if (res.action !== 'removed') {
+                        if (res.vote_type === 'like') {
+                            $likeBtn.removeClass('btn-outline-primary').addClass('btn-primary');
+                        } else if (res.vote_type === 'dislike') {
+                            $dislikeBtn.removeClass('btn-outline-danger').addClass('btn-danger');
+                        }
+                    }
+                },
+                error: function (xhr) {
+                    if (xhr.status === 401) {
+                        alert('Please login to vote!');
+                        window.location.href = '/login/';
+                    } else {
+                        alert('Error voting');
+                    }
+                }
+            });
+        });
+    });
+</script>
 </body>
 </html>

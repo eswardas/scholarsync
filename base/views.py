@@ -90,6 +90,13 @@ def room(request, pk):
                 room=room
             )
         
+        # Return JSON response for AJAX requests
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'status': 'success',
+                'message_id': message.id
+            })
+        
         return redirect('room', pk=room.id)
     
     for message in room_messages:
@@ -274,8 +281,13 @@ def deleteMessage(request, pk):
     if request.user != message.user and not request.user.is_superuser:
         return JsonResponse({'error': 'You are not allowed here!'}, status=403)
     
+    message_id = message.id
     message.delete()
-    return JsonResponse({'status': 'success'})
+    
+    return JsonResponse({
+        'status': 'success',
+        'message_id': message_id
+    })
 
 @login_required(login_url='login')
 def voteMessage(request, pk):
