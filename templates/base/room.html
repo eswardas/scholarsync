@@ -5,8 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ room.name }} - ScholarSync</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/style.css">
-</head>
+    <link rel="stylesheet" href="/static/css/style.css?v=6">
+
+    <style>
+        .navbar {
+            /* This z-index ensures the navbar and its dropdown appear on top of other page content */
+            z-index: 1050;
+        }
+    </style>
+    </head>
 <body class="bg-dark">
     <nav class="navbar navbar-expand-lg navbar-dark bg-black border-bottom border-secondary">
         <div class="container">
@@ -25,19 +32,23 @@
                 </ul>
                 <ul class="navbar-nav">
                     {% if request.user.is_authenticated %}
-                        <li class="nav-item">
-                            <a class="nav-link text-light" href="{% url 'update-user' %}">{{request.user.username}}</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-light" href="{% url 'logout' %}">Logout</a>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userMenu" data-bs-toggle="dropdown">
+                                <span class="me-2 user-avatar rounded-circle bg-primary d-inline-grid place-items-center text-white" style="width:28px;height:28px;display:inline-grid;place-items:center;">
+                                    {{ request.user.username|first|upper }}
+                                </span>
+                                <span class="fw-600">{{ request.user.username }}</span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark">
+                                <li><a class="dropdown-item" href="{% url 'user-profile' request.user.id %}">Profile</a></li>
+                                <li><a class="dropdown-item" href="{% url 'update-user' %}">Update Profile</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="{% url 'logout' %}">Logout</a></li>
+                            </ul>
                         </li>
                     {% else %}
-                        <li class="nav-item">
-                            <a class="nav-link text-light" href="{% url 'login' %}">Login</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-light" href="{% url 'register' %}">Register</a>
-                        </li>
+                        <li class="nav-item"><a class="nav-link text-light" href="{% url 'login' %}">Login</a></li>
+                        <li class="nav-item"><a class="nav-link text-light" href="{% url 'register' %}">Register</a></li>
                     {% endif %}
                 </ul>
             </div>
@@ -62,7 +73,7 @@
                         </div>
                     {% endif %}
                 </div>
-                
+
                 <div class="card bg-dark border-secondary mb-4">
                     <div class="card-body">
                         <div class="row">
@@ -94,7 +105,10 @@
                     <div class="card-body p-0">
                         <div class="p-3" id="chat-messages" style="max-height: 500px; overflow-y: auto;">
                             {% for message in room_messages %}
-                                <div class="message bg-black border border-secondary rounded p-3 mb-3" id="message-{{ message.id }}" data-message-id="{{ message.id }}">
+                                <div class="message bg-black border border-secondary rounded p-3 mb-3"
+                                     id="message-{{ message.id }}"
+                                     data-message-id="{{ message.id }}"
+                                     data-user-id="{{ message.user.id }}">
                                     <div class="d-flex justify-content-between align-items-start mb-2">
                                         <div class="d-flex align-items-center">
                                             <strong>
@@ -104,15 +118,35 @@
                                             </strong>
                                             <small class="text-muted ms-2">{{ message.created|timesince }} ago</small>
                                         </div>
-                                        {% if request.user == message.user or request.user.is_superuser %}
-                                            <button class="btn btn-sm btn-outline-danger delete-btn" data-message-id="{{ message.id }}">
-                                                {% if request.user.is_superuser and request.user != message.user %}Delete (Admin){% else %}Delete{% endif %}
-                                            </button>
-                                        {% endif %}
+                                        <div class="btn-group btn-group-sm">
+                                            {% if request.user.is_authenticated %}
+                                                <button class="btn btn-outline-secondary reply-btn"
+                                                        data-message-id="{{ message.id }}"
+                                                        data-username="{{ message.user.username }}">Reply</button>
+                                                <button class="btn btn-outline-warning report-btn"
+                                                        data-message-id="{{ message.id }}"
+                                                        data-username="{{ message.user.username }}">Report</button>
+                                            {% endif %}
+                                            {% if request.user == message.user or request.user.is_superuser %}
+                                                <button class="btn btn-outline-danger delete-btn" data-message-id="{{ message.id }}">
+                                                    {% if request.user.is_superuser and request.user != message.user %}Delete (Admin){% else %}Delete{% endif %}
+                                                </button>
+                                            {% endif %}
+                                        </div>
                                     </div>
-                                    <p class="text-light mb-2">{{ message.body }}</p>
-                                    
-                                    <!-- File attachments -->
+
+                                    {% if message.parent %}
+                                        <div class="small text-muted mb-2">
+                                            Replying to
+                                            <a href="{% url 'user-profile' message.parent.user.id %}" class="text-primary text-decoration-none">
+                                                @{{ message.parent.user.username }}
+                                            </a>:
+                                            “{{ message.parent.body|truncatechars:80 }}”
+                                        </div>
+                                    {% endif %}
+
+                                    <p class="text-light mb-2 message-body">{{ message.body }}</p>
+
                                     {% if message.file_attachment %}
                                         <div class="mb-2">
                                             {% if message.file_type == 'image' %}
@@ -134,18 +168,16 @@
                                             {% endif %}
                                         </div>
                                     {% endif %}
-                                    
+
                                     <div class="d-flex gap-2">
-                                        <button 
+                                        <button
                                             class="btn btn-sm {% if message.user_vote and message.user_vote.vote_type == 'like' %}btn-primary{% else %}btn-outline-primary{% endif %} like-btn"
-                                            data-message-id="{{ message.id }}"
-                                        >
+                                            data-message-id="{{ message.id }}">
                                             👍 <span class="like-count">{{ message.votes.filter.vote_type.like.count }}</span>
                                         </button>
-                                        <button 
+                                        <button
                                             class="btn btn-sm {% if message.user_vote and message.user_vote.vote_type == 'dislike' %}btn-danger{% else %}btn-outline-danger{% endif %} dislike-btn"
-                                            data-message-id="{{ message.id }}"
-                                        >
+                                            data-message-id="{{ message.id }}">
                                             👎 <span class="dislike-count">{{ message.votes.filter.vote_type.dislike.count }}</span>
                                         </button>
                                     </div>
@@ -157,10 +189,17 @@
 
                 {% if request.user.is_authenticated %}
                     <input type="hidden" id="csrf-token" value="{{ csrf_token }}">
+                    <div id="reply-context" class="alert alert-info bg-dark border-info text-info d-none py-2 px-3 small mb-2">
+                        Replying to <a id="reply-user-link" href="#" class="text-primary">@user</a>:
+                        <span id="reply-snippet" class="text-muted"></span>
+                        <button type="button" id="cancel-reply" class="btn btn-sm btn-outline-secondary ms-2">Cancel</button>
+                    </div>
+
                     <div class="card bg-dark border-secondary">
                         <div class="card-body">
                             <form id="message-form" method="POST" enctype="multipart/form-data">
                                 {% csrf_token %}
+                                <input type="hidden" name="parent_id" id="parent_id" value="">
                                 <div class="mb-3">
                                     <textarea name="body" id="chat-message-input" class="form-control bg-black text-light border-secondary" placeholder="Share your thoughts..." rows="3"></textarea>
                                 </div>
@@ -199,7 +238,6 @@
         </div>
     </div>
 
-    <!-- DELETE CONFIRMATION MODAL -->
     <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content bg-dark text-light">
@@ -219,33 +257,94 @@
         </div>
     </div>
 
+    <div class="modal fade" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content bg-dark text-light">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title" id="reportModalLabel">Report Message</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-3">Reporting message by <strong id="reportUser">@user</strong></p>
+                    <div class="mb-3">
+                        <label class="form-label">Reason</label>
+                        <select id="reportReason" class="form-control bg-black text-light border-secondary">
+                            <option value="spam">Spam</option>
+                            <option value="abuse">Harassment/Abuse</option>
+                            <option value="inappropriate">Inappropriate Content</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label">Details (optional)</label>
+                        <textarea id="reportDetails" class="form-control bg-black text-light border-secondary" rows="3" placeholder="Add any details..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-outline-warning" id="confirmReportBtn">Submit Report</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+    // CSRF helpers
+    function getCookie(name) {
+        const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+        return match ? decodeURIComponent(match[2]) : null;
+    }
+    function getCSRFToken() {
+        const fromForm = document.querySelector('input[name="csrfmiddlewaretoken"]');
+        if (fromForm && fromForm.value) return fromForm.value;
+        return getCookie('csrftoken');
+    }
+
+    // Attach CSRF to all jQuery AJAX requests
+    $.ajaxSetup({
+        beforeSend: function (xhr, settings) {
+            if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                xhr.setRequestHeader('X-CSRFToken', getCSRFToken());
+            }
+        }
+    });
+
+    // Main application logic
     $(function () {
         const roomId = "{{ room.id }}";
         const csrfToken = $('#csrf-token').val();
+        const IS_AUTH = {{ request.user.is_authenticated|yesno:"true,false" }};
         let currentMessageId = null;
         let lastMessageId = 0;
+        let reportMessageId = null;
 
-        // Reuse a single modal instance
         const deleteModalEl = document.getElementById('deleteModal');
         const deleteModal = bootstrap.Modal.getOrCreateInstance(deleteModalEl, { backdrop: true, keyboard: true });
 
-        // Helper: safely hide modal and clean backdrops/body
-        function safeHideModal() {
-            try { deleteModal.hide(); } catch (e) {}
+        const reportModalEl = document.getElementById('reportModal');
+        const reportModal = bootstrap.Modal.getOrCreateInstance(reportModalEl, { backdrop: true, keyboard: true });
+
+        function safeHideModal(modal, el) {
+            try { modal.hide(); } catch(e) {}
             setTimeout(function () {
                 $('.modal-backdrop').remove();
                 $('body').removeClass('modal-open').css('padding-right', '');
-                $(deleteModalEl).attr('style', '');
+                $(el).attr('style', '');
             }, 120);
         }
 
-        // When modal fully hidden, reset state
         deleteModalEl.addEventListener('hidden.bs.modal', function () {
             currentMessageId = null;
             $('#confirmDeleteBtn').prop('disabled', false).text('Delete Message');
+        });
+
+        reportModalEl.addEventListener('hidden.bs.modal', function () {
+            reportMessageId = null;
+            $('#confirmReportBtn').prop('disabled', false).text('Submit Report');
+            $('#reportReason').val('spam');
+            $('#reportDetails').val('');
         });
 
         // Compute last message id on load
@@ -256,10 +355,76 @@
             }).get());
         }
 
-        // Open confirm modal
+        // Reply handler
+        $(document).on('click', '.reply-btn', function () {
+            if (!IS_AUTH) return window.location.href = '/login/';
+
+            const msgId = $(this).data('message-id');
+            const username = $(this).data('username');
+            const userId = $(`#message-${msgId}`).data('user-id') || '';
+            const bodyText = ($(`#message-${msgId} .message-body`).text() || '').trim().slice(0, 120);
+
+            $('#parent_id').val(msgId);
+            $('#reply-user-link').text(`@${username}`).attr('href', userId ? `/profile/${userId}/` : '#');
+            $('#reply-snippet').text(`“${bodyText}${bodyText.length >= 120 ? '…' : ''}”`);
+            $('#reply-context').removeClass('d-none');
+
+            const $input = $('#chat-message-input');
+            if (!$input.val().startsWith(`@${username} `)) {
+                $input.val(`@${username} ` + $input.val());
+            }
+            $input.focus();
+
+            $('html, body').animate({ scrollTop: $('#message-form').offset().top - 100 }, 200);
+        });
+
+        // Cancel reply
+        $('#cancel-reply').on('click', function () {
+            const $input = $('#chat-message-input');
+            const mention = $('#reply-user-link').text() + ' ';
+            if ($input.val().startsWith(mention)) {
+                $input.val($input.val().replace(mention, ''));
+            }
+            $('#parent_id').val('');
+            $('#reply-context').addClass('d-none');
+        });
+
+        // Open confirm delete
         $(document).on('click', '.delete-btn', function () {
             currentMessageId = $(this).data('message-id');
             deleteModal.show();
+        });
+
+        // Report flow
+        $(document).on('click', '.report-btn', function () {
+            if (!IS_AUTH) return window.location.href = '/login/';
+            reportMessageId = $(this).data('message-id');
+            const user = $(this).data('username');
+            $('#reportUser').text('@' + user);
+            reportModal.show();
+        });
+
+        $('#confirmReportBtn').on('click', function () {
+            if (!reportMessageId) return;
+            const $btn = $(this).prop('disabled', true).text('Submitting...');
+            $.ajax({
+                url: `/report/${reportMessageId}/`,
+                type: 'POST',
+                data: {
+                    reason: $('#reportReason').val(),
+                    details: $('#reportDetails').val()
+                },
+                success: function () {
+                    alert('Report submitted. Thank you!');
+                    safeHideModal(reportModal, reportModalEl);
+                    $btn.prop('disabled', false).text('Submit Report');
+                },
+                error: function () {
+                    alert('Error submitting report');
+                    safeHideModal(reportModal, reportModalEl);
+                    $btn.prop('disabled', false).text('Submit Report');
+                }
+            });
         });
 
         // Poll new messages/participants
@@ -285,19 +450,38 @@
                                     }
                                 }
 
+                                const replyInfo = msg.parent_id ? `
+                                    <div class="small text-muted mb-2">
+                                        Replying to <a href="/profile/${msg.parent_id ? '' : ''}" class="text-primary text-decoration-none">@${msg.parent_username}</a>:
+                                        “${msg.parent_excerpt || ''}”
+                                    </div>` : '';
+
+                                const actions = IS_AUTH ? `
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-secondary reply-btn" data-message-id="${msg.id}" data-username="${msg.username}">Reply</button>
+                                        <button class="btn btn-outline-warning report-btn" data-message-id="${msg.id}" data-username="${msg.username}">Report</button>
+                                        ${(msg.is_owner || msg.is_admin) ? `
+                                            <button class="btn btn-outline-danger delete-btn" data-message-id="${msg.id}">
+                                                ${(msg.is_admin && !msg.is_owner) ? 'Delete (Admin)' : 'Delete'}
+                                            </button>` : ``}
+                                    </div>` : (msg.is_owner || msg.is_admin) ? `
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-outline-danger delete-btn" data-message-id="${msg.id}">
+                                                ${(msg.is_admin && !msg.is_owner) ? 'Delete (Admin)' : 'Delete'}
+                                            </button>
+                                        </div>` : '';
+
                                 const html = `
-                                    <div class="message bg-black border border-secondary rounded p-3 mb-3" id="message-${msg.id}" data-message-id="${msg.id}">
+                                    <div class="message bg-black border border-secondary rounded p-3 mb-3" id="message-${msg.id}" data-message-id="${msg.id}" data-user-id="${msg.user_id}">
                                         <div class="d-flex justify-content-between align-items-start mb-2">
                                             <div class="d-flex align-items-center">
                                                 <strong><a href="/profile/${msg.user_id}/" class="text-primary text-decoration-none">${msg.username}</a></strong>
                                                 <small class="text-muted ms-2">just now</small>
                                             </div>
-                                            ${(msg.is_owner || msg.is_admin) ? `
-                                                <button class="btn btn-sm btn-outline-danger delete-btn" data-message-id="${msg.id}">
-                                                    ${(msg.is_admin && !msg.is_owner) ? 'Delete (Admin)' : 'Delete'}
-                                                </button>` : ``}
+                                            ${actions}
                                         </div>
-                                        <p class="text-light mb-2">${msg.body || ''}</p>
+                                        ${replyInfo}
+                                        <p class="text-light mb-2 message-body">${msg.body || ''}</p>
                                         ${fileHtml}
                                         <div class="d-flex gap-2">
                                             <button class="btn btn-sm ${msg.user_vote === 'like' ? 'btn-primary' : 'btn-outline-primary'} like-btn" data-message-id="${msg.id}">
@@ -353,6 +537,8 @@
                 success: function () {
                     $('#chat-message-input').val('');
                     $('#file_attachment').val('');
+                    $('#parent_id').val('');
+                    $('#reply-context').addClass('d-none');
                 },
                 error: function () {
                     alert('Error sending message');
@@ -368,19 +554,17 @@
             $.ajax({
                 url: `/delete-message/${currentMessageId}/`,
                 type: 'POST',
-                headers: { 'X-CSRFToken': csrfToken },
                 success: function () {
-                    // Remove the message immediately
                     $(`#message-${currentMessageId}`).fadeOut(120, function () {
                         $(this).remove();
                     });
-                    safeHideModal();
+                    safeHideModal(deleteModal, deleteModalEl);
                     currentMessageId = null;
                     $btn.prop('disabled', false).text('Delete Message');
                 },
                 error: function () {
                     alert('Error deleting message');
-                    safeHideModal();
+                    safeHideModal(deleteModal, deleteModalEl);
                     $btn.prop('disabled', false).text('Delete Message');
                 }
             });
@@ -395,7 +579,6 @@
             $.ajax({
                 url: `/vote/${id}/`,
                 type: 'POST',
-                headers: { 'X-CSRFToken': csrfToken },
                 data: { vote_type: voteType },
                 success: function (res) {
                     const $row = $btn.closest('.message');

@@ -1,7 +1,22 @@
+/* === BRAND THEME (from logo) === */
+:root {
+    --brand-blue: #3b82f6;   /* blue from your current primary */
+    --brand-teal: #10b981;   /* teal from your success */
+    --brand-gradient: linear-gradient(90deg, var(--brand-blue), var(--brand-teal));
+    --bg-900: #121212;       /* page background */
+    --bg-800: rgba(0,0,0,0.8);     /* navbar glassy bg */
+    --card-800: #1e1e1e;
+    --card-850: #2a2a2a;
+    --border-700: #333;
+    --border-650: #3a3a3a;
+    --text-muted-450: #888;
+    --shadow-strong: 0 20px 40px rgba(0,0,0,0.5);
+}
+
 /* === GLOBAL RESET & TYPOGRAPHY === */
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #121212;
+    background-color: var(--bg-900);
     color: #e0e0e0;
     line-height: 1.6;
 }
@@ -16,7 +31,68 @@ body {
 
 .navbar {
     backdrop-filter: blur(10px);
-    background-color: rgba(0, 0, 0, 0.8) !important;
+    background-color: var(--bg-800) !important;
+    min-height: 64px;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.04), 0 6px 24px rgba(0,0,0,0.35);
+}
+
+/* Optional helper to explicitly color the navbar background via class */
+.bg-navbar {
+    background-color: var(--bg-800) !important;
+}
+
+/* Navbar links */
+.navbar .nav-link {
+    color: #cfd8e3 !important;
+    opacity: 0.9;
+    transition: opacity .2s ease, color .2s ease;
+    font-size: 0.95rem;
+}
+.navbar .nav-link:hover,
+.navbar .nav-link:focus {
+    opacity: 1;
+    color: #ffffff !important;
+}
+
+/* Brand gradient text + logo sizing */
+.text-gradient {
+    background: var(--brand-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent !important;
+}
+.brand-logo {
+    height: 32px;
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.35));
+}
+.brand-text {
+    font-size: 1.1rem;
+}
+
+/* User dropdown styles */
+.dropdown-menu-dark {
+    background-color: #0f141c;
+    border: 1px solid #1f2732;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+}
+.dropdown-item {
+    color: #dbe3ea;
+}
+.dropdown-item:hover {
+    background-color: #16202c;
+}
+
+/* Simple placeholder avatar circle for initial */
+.placeholder-avatar {
+    width: 28px;
+    height: 28px;
+    display: inline-grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--brand-gradient);
+    color: #0e1117;
+    font-weight: 700;
+    font-size: 0.9rem;
 }
 
 /* === CONTAINERS & CARDS === */
@@ -25,41 +101,49 @@ body {
 }
 
 .card {
-    background-color: #1e1e1e;
-    border: 1px solid #333;
+    background-color: var(--card-800);
+    border: 1px solid var(--border-700);
     border-radius: 16px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     transition: all 0.3s ease;
     backdrop-filter: blur(5px);
 }
-
 .card:hover {
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
     transform: translateY(-2px);
     border-color: #444;
 }
 
+/* Helper class to explicitly set card bg (used in updated home.html) */
+.bg-card {
+    background-color: var(--card-800) !important;
+    border-color: var(--border-700) !important;
+}
+
 .card-header {
-    background-color: #2a2a2a;
-    border-bottom: 1px solid #3a3a3a;
+    background-color: var(--card-850);
+    border-bottom: 1px solid var(--border-650);
     border-radius: 16px 16px 0 0 !important;
     padding: 16px 20px;
     font-weight: 600;
     color: #ffffff;
 }
-
 .card-body {
     padding: 24px;
 }
 
 /* === BUTTONS === */
+.btn {
+    border-radius: 10px;
+}
+
+/* Bootstrap primary/outline/other variants keep your original colors */
 .btn-primary {
-    background-color: #3b82f6;
-    border-color: #3b82f6;
+    background-color: var(--brand-blue);
+    border-color: var(--brand-blue);
     font-weight: 500;
     transition: all 0.2s ease;
 }
-
 .btn-primary:hover {
     background-color: #2563eb;
     border-color: #2563eb;
@@ -68,24 +152,48 @@ body {
 }
 
 .btn-outline-primary {
-    color: #3b82f6;
-    border-color: #3b82f6;
+    color: var(--brand-blue);
+    border-color: var(--brand-blue);
     transition: all 0.2s ease;
 }
-
 .btn-outline-primary:hover {
-    background-color: #3b82f6;
+    background-color: var(--brand-blue);
     color: white;
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
+/* Brand gradient buttons (used in hero/actions) */
+.btn-brand {
+    background: var(--brand-gradient);
+    color: #fff !important;
+    border: 0;
+    box-shadow: 0 6px 18px rgba(16, 185, 129, 0.18);
+}
+.btn-brand:hover {
+    filter: brightness(1.06);
+    transform: translateY(-1px);
+}
+
+/* Outline brand */
+.btn-outline-brand {
+    color: var(--brand-teal);
+    background: transparent;
+    border: 1px solid var(--brand-teal);
+}
+.btn-outline-brand:hover {
+    background: linear-gradient(90deg, rgba(14,165,233,.12), rgba(16,185,129,.12));
+    color: #fff;
+    border-color: var(--brand-teal);
+    transform: translateY(-1px);
+}
+
+/* Bootstrap danger/success variants (keep your styling) */
 .btn-danger {
     background-color: #ef4444;
     border-color: #ef4444;
     transition: all 0.2s ease;
 }
-
 .btn-danger:hover {
     background-color: #dc2626;
     border-color: #dc2626;
@@ -98,7 +206,6 @@ body {
     border-color: #ef4444;
     transition: all 0.2s ease;
 }
-
 .btn-outline-danger:hover {
     background-color: #ef4444;
     color: white;
@@ -107,11 +214,10 @@ body {
 }
 
 .btn-success {
-    background-color: #10b981;
-    border-color: #10b981;
+    background-color: var(--brand-teal);
+    border-color: var(--brand-teal);
     transition: all 0.2s ease;
 }
-
 .btn-success:hover {
     background-color: #059669;
     border-color: #059669;
@@ -121,35 +227,32 @@ body {
 
 /* === FORM CONTROLS === */
 .form-control {
-    background-color: #2a2a2a;
+    background-color: var(--card-850);
     border: 1px solid #444;
     border-radius: 8px;
     color: #ffffff;
     padding: 12px 16px;
     transition: all 0.2s;
 }
-
 .form-control:focus {
     background-color: #333;
-    border-color: #3b82f6;
+    border-color: var(--brand-blue);
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
     color: #ffffff;
 }
-
 .form-control::placeholder {
-    color: #888;
+    color: var(--text-muted-450);
 }
 
 /* === MESSAGES & CHAT === */
 .message {
-    background-color: #2a2a2a;
-    border: 1px solid #3a3a3a;
+    background-color: var(--card-850);
+    border: 1px solid var(--border-650);
     border-radius: 12px;
     padding: 16px;
     margin-bottom: 16px;
     transition: all 0.2s ease;
 }
-
 .message:hover {
     background-color: #333;
     border-color: #444;
@@ -162,24 +265,28 @@ body {
     padding: 4px 8px;
     border-radius: 6px;
 }
+/* Brand gradient badge used in rooms/study type counts */
+.bg-badge {
+    background: var(--brand-gradient);
+    border: 0;
+}
 
 /* === UTILITIES === */
 .text-muted {
-    color: #888 !important;
+    color: var(--text-muted-450) !important;
 }
-
 .rounded-circle {
     border-radius: 50% !important;
 }
 
+/* === LIST GROUP ITEMS === */
 .list-group-item {
-    background-color: #2a2a2a;
-    border: 1px solid #3a3a3a;
+    background-color: var(--card-850);
+    border: 1px solid var(--border-650);
     color: #e0e0e0;
     padding: 16px 20px;
     transition: all 0.2s;
 }
-
 .list-group-item:hover {
     background-color: #333;
     border-color: #444;
@@ -194,22 +301,19 @@ body {
 
 /* === MODAL STYLING === */
 .modal-content {
-    background-color: #1e1e1e;
-    border: 1px solid #333;
+    background-color: var(--card-800);
+    border: 1px solid var(--border-700);
     border-radius: 16px;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    box-shadow: var(--shadow-strong);
 }
-
 .modal-header {
-    border-bottom: 1px solid #3a3a3a;
+    border-bottom: 1px solid var(--border-650);
     padding: 20px 24px;
 }
-
 .modal-footer {
-    border-top: 1px solid #3a3a3a;
+    border-top: 1px solid var(--border-650);
     padding: 20px 24px;
 }
-
 .btn-close {
     filter: invert(1);
 }
@@ -218,27 +322,32 @@ body {
 textarea.form-control {
     min-height: 120px;
     resize: vertical;
-    background-color: #2a2a2a;
+    background-color: var(--card-850);
     color: #ffffff;
 }
 
 /* === ALERTS === */
 .alert {
-    background-color: #2a2a2a;
-    border: 1px solid #3a3a3a;
+    background-color: var(--card-850);
+    border: 1px solid var(--border-650);
     color: #e0e0e0;
 }
 
 /* === LINKS === */
 a {
-    color: #3b82f6;
+    color: var(--brand-blue);
     text-decoration: none;
-    transition: color 0.2s ease;
+    transition: color 0.2s ease, text-decoration-color 0.2s ease;
 }
-
 a:hover {
     color: #2563eb;
     text-decoration: underline;
+}
+
+/* === HERO ENHANCEMENTS === */
+.hero-logo {
+    height: 88px;
+    filter: drop-shadow(0 12px 24px rgba(0,0,0,0.35));
 }
 
 /* === RESPONSIVE ADJUSTMENTS === */
@@ -246,21 +355,104 @@ a:hover {
     .navbar-nav .nav-item {
         margin: 5px 0;
     }
-    
     .card-body {
         padding: 16px;
     }
-    
     .container {
         padding: 0 16px;
     }
-    
     .btn-group {
         flex-direction: column;
         gap: 8px;
     }
-    
     .btn-group .btn {
         width: 100%;
     }
+}
+
+/* --- Logo sizing (prevents gigantic logo) --- */
+.navbar-brand .brand-logo {
+  height: 28px !important;   /* navbar size */
+  width: auto !important;
+  max-width: 32px;            /* extra safety */
+}
+
+.hero-logo {
+  height: clamp(56px, 8vw, 96px) !important; /* responsive hero size */
+  width: auto !important;
+  max-width: 40vw;            /* never wider than 40% viewport */
+  display: inline-block;
+  object-fit: contain;
+}
+
+/* === FIX: Clamp logo sizes so they can't take over the page === */
+.navbar-brand .brand-logo {
+  height: 28px !important;   /* navbar logo height */
+  width: auto !important;
+  max-width: 32px !important;
+  object-fit: contain;
+  display: inline-block;
+}
+
+.hero-logo {
+  height: clamp(64px, 12vw, 110px) !important; /* responsive hero size */
+  width: auto !important;
+  max-width: 35vw !important;  /* safety cap */
+  object-fit: contain;
+  display: inline-block;
+}
+
+/* Safety: never let any img overflow its container */
+img {
+  max-width: 100%;
+  height: auto;
+}
+/* === HARD FIXES: stop giant logo from hijacking the page === */
+
+/* If any background-image was ever set on body, kill it */
+body {
+  background-image: none !important;
+  background-size: auto !important;
+  background-repeat: no-repeat !important;
+  background-position: center top !important;
+  overflow-x: hidden; /* avoid horizontal scroll from rogue images */
+}
+
+/* Navbar logo sizing */
+.navbar-brand .brand-logo {
+  height: 28px !important;
+  width: auto !important;
+  max-width: 32px !important;
+  object-fit: contain;
+  display: inline-block;
+}
+
+/* If the hero logo is re-added later, keep it small */
+.hero-logo {
+  height: clamp(64px, 10vw, 110px) !important;
+  width: auto !important;
+  max-width: 35vw !important;
+  object-fit: contain;
+  display: inline-block;
+}
+
+/* Safety: any image named 'logo' won’t exceed 120px tall */
+img[src*="logo"] {
+  max-height: 120px !important;
+  width: auto !important;
+}
+
+/* Global safety: images stay within their containers */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* static/css/style.css */
+
+/* Add this new rule at the end of the file */
+
+.navbar {
+    position: relative; /* This is required for z-index to work */
+    z-index: 1050;      /* This is a high number to ensure it's on top of other content */
 }

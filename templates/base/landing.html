@@ -1,0 +1,129 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ScholarSync - Collaborate, Learn, and Grow Together</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=9">
+    <style>
+        /* Custom styles for the landing page */
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+        .hero-section {
+            background: linear-gradient(135deg, rgba(20, 24, 38, 0.95), rgba(41, 48, 77, 0.9)), url('{% static "img/hero-bg.jpg" %}');
+            background-size: cover;
+            background-position: center;
+            padding: 120px 0;
+            color: white;
+        }
+        .hero-section .display-4 {
+            font-weight: 700;
+        }
+        .hero-section .lead {
+            font-size: 1.25rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .btn-brand-gradient {
+            background-image: linear-gradient(to right, #4e54c8, #8f94fb);
+            border: none;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn-brand-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .feature-icon {
+            font-size: 3rem;
+            color: #8f94fb;
+        }
+        .section-title {
+            font-weight: 700;
+            margin-bottom: 40px;
+        }
+    </style>
+</head>
+<body class="bg-dark text-light">
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="#">
+                <img src="{% static 'img/default.png' %}" alt="Logo" width="30" height="30" class="d-inline-block align-text-top me-2">
+                ScholarSync
+            </a>
+            <div class="ms-auto">
+                <a href="{% url 'login' %}" class="btn btn-outline-light me-2">Login</a>
+                <a href="{% url 'register' %}" class="btn btn-brand-gradient">Sign Up for Free</a>
+            </div>
+        </div>
+    </nav>
+
+    <section class="hero-section text-center">
+        <div class="container">
+            <h1 class="display-4 mb-3">Stop Studying Alone. Start Studying Together.</h1>
+            <p class="lead mb-4">ScholarSync connects you with a global community of students. Create or join study rooms, chat in real-time, share resources, and achieve your academic goals faster.</p>
+            <a href="{% url 'register' %}" class="btn btn-lg btn-brand-gradient px-5 py-3">Get Started Now</a>
+        </div>
+    </section>
+
+    <section class="py-5">
+        <div class="container text-center">
+            <h2 class="section-title text-white">Why You'll Love ScholarSync</h2>
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="card bg-card border-secondary h-100 p-3">
+                        <div class="card-body">
+                            <i class="bi bi-people-fill feature-icon mb-3"></i>
+                            <h5 class="card-title text-white">Collaborative Rooms</h5>
+                            <p class="card-text text-muted">Find public rooms by topic or create your own private space for focused group study.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-card border-secondary h-100 p-3">
+                        <div class="card-body">
+                            <i class="bi bi-chat-dots-fill feature-icon mb-3"></i>
+                            <h5 class="card-title text-white">Real-Time Chat</h5>
+                            <p class="card-text text-muted">Discuss complex topics, ask questions, and get instant feedback with our live chat system.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-card border-secondary h-100 p-3">
+                        <div class="card-body">
+                            <i class="bi bi-cloud-arrow-up-fill feature-icon mb-3"></i>
+                            <h5 class="card-title text-white">Share & Learn</h5>
+                            <p class="card-text text-muted">Easily share files, images, and notes with your study group to enhance learning.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-5 bg-card">
+        <div class="container text-center">
+            <h2 class="section-title text-white">Ready to Boost Your Grades?</h2>
+            <p class="lead text-muted mb-4">Join thousands of students who are already learning better, together.</p>
+            <a href="{% url 'register' %}" class="btn btn-lg btn-brand-gradient px-5 py-3">Sign Up - It's Free!</a>
+        </div>
+    </section>
+
+    <footer class="bg-dark text-center py-4">
+        <div class="container">
+            <p class="text-muted mb-0">&copy; {% now "Y" %} ScholarSync. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

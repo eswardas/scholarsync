@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 import os
 
+
 def get_file_path(instance, filename):
     # Get file extension
     ext = filename.split('.')[-1].lower()
@@ -16,11 +17,13 @@ def get_file_path(instance, filename):
     else:
         return f'messages/documents/{instance.user.username}/{filename}'
 
+
 class Topic(models.Model):
     name = models.CharField(max_length=200)
-    
+
     def __str__(self):
         return self.name
+
 
 class Room(models.Model):
     host = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
@@ -32,25 +35,29 @@ class Room(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
     max_participants = models.IntegerField(default=50)
-    study_type = models.CharField(max_length=50, choices=[
-        ('quiet', 'Quiet Study'),
-        ('discussion', 'Discussion'),
-        ('teaching', 'Teaching/Tutoring'),
-    ], default='discussion')
+    study_type = models.CharField(
+        max_length=50,
+        choices=[
+            ('quiet', 'Quiet Study'),
+            ('discussion', 'Discussion'),
+            ('teaching', 'Teaching/Tutoring'),
+        ],
+        default='discussion'
+    )
     is_private = models.BooleanField(default=False)
     private_id = models.CharField(max_length=8, blank=True, null=True)
     private_password = models.CharField(max_length=20, blank=True, null=True)
-    
+
     class Meta:
         ordering = ['-updated', '-created']
-    
+
     def __str__(self):
         return self.name
-    
+
     @property
     def participant_count(self):
         return self.participants.count()
-    
+
     def get_participants_data(self):
         participants = self.participants.all()
         return [{
@@ -58,6 +65,7 @@ class Room(models.Model):
             'username': p.username,
             'is_superuser': p.is_superuser
         } for p in participants]
+
 
 class Message(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -68,18 +76,22 @@ class Message(models.Model):
     file_type = models.CharField(max_length=20, blank=True, null=True)  # image, audio, video, document
     updated = models.DateTimeField(auto_now=True)
     created = models.DateTimeField(auto_now_add=True)
-    
+
+    # NEW: reply support
+    parent = models.ForeignKey('self', null=True, blank=True,
+                               on_delete=models.SET_NULL, related_name='replies')
+
     class Meta:
         ordering = ['-created']
-    
+
     def __str__(self):
         return self.body[0:50]
-    
+
     def save(self, *args, **kwargs):
         if self.file_attachment:
             # Set file name
             self.file_name = self.file_attachment.name
-            
+
             # Determine file type based on extension
             ext = self.file_attachment.name.split('.')[-1].lower()
             if ext in ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp']:
@@ -90,8 +102,9 @@ class Message(models.Model):
                 self.file_type = 'video'
             else:
                 self.file_type = 'document'
-        
+
         super().save(*args, **kwargs)
+
 
 class Vote(models.Model):
     LIKE = 'like'
@@ -100,17 +113,18 @@ class Vote(models.Model):
         (LIKE, 'Like'),
         (DISLIKE, 'Dislike'),
     ]
-    
+
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     message = models.ForeignKey(Message, on_delete=models.CASCADE, related_name='votes')
     vote_type = models.CharField(max_length=7, choices=VOTE_CHOICES)
     created = models.DateTimeField(auto_now_add=True)
-    
+
     class Meta:
         unique_together = ('user', 'message')
-    
+
     def __str__(self):
         return f"{self.user.username} {self.vote_type}d {self.message.body[:20]}"
+
 
 class StudySession(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -119,9 +133,10 @@ class StudySession(models.Model):
     end_time = models.DateTimeField(null=True, blank=True)
     goal = models.TextField(blank=True)
     completed = models.BooleanField(default=False)
-    
+
     def __str__(self):
         return f"{self.user.username} - {self.room.name} - {self.start_time}"
+
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -130,16 +145,55 @@ class UserProfile(models.Model):
     study_streak = models.IntegerField(default=0)
     total_study_hours = models.FloatField(default=0)
     reputation_points = models.IntegerField(default=0)
-    preferred_study_time = models.CharField(max_length=20, choices=[
-        ('morning', 'Morning'),
-        ('afternoon', 'Afternoon'),
-        ('evening', 'Evening'),
-        ('night', 'Night'),
-    ], blank=True)
-    
+    preferred_study_time = models.CharField(
+        max_length=20,
+        choices=[
+            ('morning', 'Morning'),
+            ('afternoon', 'Afternoon'),
+            ('evening', 'Evening'),
+            ('night', 'Night'),
+        ],
+        blank=True
+    )
+    # NEW FIELD FOR SUSPENSION
+    suspended_until = models.DateTimeField(null=True, blank=True)
+
     def __str__(self):
         return f"{self.user.username}'s profile"
-    
+
+    @property
+    def is_suspended(self):
+        if self.suspended_until:
+            return timezone.now() < self.suspended_until
+        return False
+
     @property
     def total_likes_received(self):
         return Vote.objects.filter(message__user=self.user, vote_type='like').count()
+
+class MessageReport(models.Model):
+    REASONS = [
+        ('spam', 'Spam'),
+        ('abuse', 'Harassment/Abuse'),
+        ('inappropriate', 'Inappropriate Content'),
+        ('other', 'Other'),
+    ]
+    reporter = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='message_reports')
+    message = models.ForeignKey(
+        Message, on_delete=models.CASCADE, related_name='reports')
+    reason = models.CharField(max_length=32, choices=REASONS)
+    details = models.TextField(blank=True)
+    status = models.CharField(
+        max_length=16,
+        choices=[('open', 'Open'), ('reviewed', 'Reviewed')],
+        default='open'
+    )
+    created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('reporter', 'message')
+        ordering = ['-created']
+
+    def __str__(self):
+        return f'{self.reporter.username} reported msg {self.message_id} ({self.reason})'
