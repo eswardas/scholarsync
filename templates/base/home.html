@@ -4,201 +4,155 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ScholarSync - Find Your Study Room</title>
-
+    <title>Dashboard - ScholarSync</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=5">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=12">
 </head>
 <body class="bg-dark">
-    <nav class="navbar navbar-expand-lg navbar-dark bg-navbar border-bottom border-secondary">
-        <div class="container">
-            <a class="navbar-brand d-flex align-items-center text-gradient" href="{% url 'home' %}">
-                <img src="{% static 'img/default.png' %}" alt="ScholarSync" class="me-2 brand-logo" width="28" height="28">
-                <span class="brand-text fw-bold">ScholarSync</span>
-            </a>
 
+    <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="{% url 'home' %}">
+                <img src="{% static 'img/default.png' %}" alt="ScholarSync" class="brand-logo me-2">
+                <span class="text-gradient">ScholarSync</span>
+            </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
-
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-3">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'topics' %}">Topics</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'activity' %}">Activity</a>
-                    </li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'topics' %}">Topics</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'activity' %}">My Activity</a></li>
                 </ul>
-
                 <ul class="navbar-nav ms-auto">
                     {% if request.user.is_authenticated %}
                         {% if request.user.is_superuser %}
-                        <li class="nav-item">
-                            <a class="nav-link text-warning" href="{% url 'moderation-reports' %}">Moderation</a>
-                        </li>
+                        <li class="nav-item"><a class="nav-link text-warning" href="{% url 'moderation-reports' %}">Moderation</a></li>
                         {% endif %}
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <span class="me-2 user-avatar placeholder-avatar">{{ request.user.username|first|upper }}</span>
+                                <span class="me-2 placeholder-avatar">{{ request.user.username|first|upper }}</span>
                                 <span class="fw-600">{{ request.user.username }}</span>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark" aria-labelledby="userMenu">
                                 <li><a class="dropdown-item" href="{% url 'user-profile' request.user.id %}">Profile</a></li>
                                 <li><a class="dropdown-item" href="{% url 'update-user' %}">Update Profile</a></li>
-                                {% if request.user.is_superuser %}
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item text-warning" href="{% url 'moderation-reports' %}">Moderation Panel</a></li>
-                                {% endif %}
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item text-danger" href="{% url 'logout' %}">Logout</a></li>
                             </ul>
                         </li>
                     {% else %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'login' %}">Login</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link btn btn-sm btn-brand ms-2 px-3 text-white" href="{% url 'register' %}">Register</a>
-                        </li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Login</a></li>
+                        <li class="nav-item"><a class="nav-link btn btn-sm btn-brand ms-2 px-3" href="{% url 'register' %}">Register</a></li>
                     {% endif %}
                 </ul>
             </div>
         </div>
     </nav>
 
-    <section class="container py-5 text-center">
-        <h1 class="display-6 fw-bold text-white mb-2">Welcome to ScholarSync</h1>
-        <p class="lead text-muted mb-0">Join study rooms, collaborate in real-time, and learn together.</p>
-    </section>
-
-    <div class="container mb-4">
-        <div class="row g-3 justify-content-center">
-            <div class="col-md-6 col-lg-5">
-                <div class="card bg-card border-secondary h-100">
-                    <div class="card-body d-flex flex-column">
-                        <div class="text-center mb-4">
-                            <div class="display-4 text-gradient mb-2">🔒</div>
-                            <h3 class="text-white">Join Private Room</h3>
-                            <p class="text-muted">Enter room ID and password to join a private study room</p>
-                        </div>
-                        <div class="mt-auto">
-                            <a href="{% url 'join-private-room' %}" class="btn btn-outline-brand w-100">Join Private Room</a>
-                        </div>
+    <main class="container py-4">
+        <div class="row g-4 mb-4">
+            <div class="col-lg-3 col-md-6">
+                <div class="card h-100">
+                    <div class="card-header"><h5 class="mb-0">Browse by Topic</h5></div>
+                    <div class="list-group list-group-flush">
+                        {% for topic in topics %}{% if topic.name %}
+                        <a href="?topic_q={{topic.name}}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            {{ topic.name }}<span class="badge bg-badge rounded-pill">{{ topic.room_set.count }}</span>
+                        </a>{% endif %}{% endfor %}
+                        <a href="{% url 'topics' %}" class="list-group-item list-group-item-action text-center text-primary fw-bold">View all...</a>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <div class="container mb-4">
-        <div class="row">
-            <div class="col-12">
-                <div class="card bg-card border-secondary">
-                    <div class="card-header bg-navbar border-secondary">
-                        <h5 class="text-white mb-0">Search Public Rooms</h5>
-                    </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="card h-100">
+                    <div class="card-header"><h5 class="mb-0">Search Public Rooms</h5></div>
                     <div class="card-body">
                         <form method="GET">
-                            <div class="row">
-                                <div class="col-md-6 mb-2 mb-md-0">
-                                    <input type="text" name="topic_q" class="form-control bg-dark text-light border-secondary" placeholder="Search by topic..." value="{{request.GET.topic_q}}">
-                                </div>
-                                <div class="col-md-6">
-                                    <input type="text" name="name_q" class="form-control bg-dark text-light border-secondary" placeholder="Search by room name..." value="{{request.GET.name_q}}">
-                                </div>
-                            </div>
-                            <div class="d-grid mt-3">
-                                <button class="btn btn-outline-primary text-light border-secondary" type="submit">Search</button>
-                            </div>
+                            <div class="mb-3"><label class="form-label text-muted small">By Topic</label><input type="text" name="topic_q" class="form-control" placeholder="e.g. Python" value="{{ request.GET.topic_q }}"></div>
+                            <div class="mb-3"><label class="form-label text-muted small">By Name</label><input type="text" name="name_q" class="form-control" placeholder="e.g. Study Group" value="{{ request.GET.name_q }}"></div>
+                            <div class="d-grid"><button class="btn btn-primary" type="submit">Search</button></div>
                         </form>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <div class="container">
-        <div class="row">
-            <div class="col-md-3">
-                <div class="card bg-card border-secondary">
-                    <div class="card-header bg-navbar border-secondary">
-                        <h5 class="text-white mb-0">Topics</h5>
-                    </div>
-                    <div class="list-group list-group-flush">
-                        {% for topic in topics %}
-                            {% if topic.name %}
-                                <a href="?topic_q={{topic.name}}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center bg-card text-light border-secondary">
-                                    {{topic.name}}
-                                    <span class="badge bg-badge rounded-pill">{{topic.room_set.count}}</span>
-                                </a>
-                            {% endif %}
-                        {% endfor %}
-                    </div>
-                </div>
-
-                <div class="card bg-card border-secondary mt-4">
-                    <div class="card-header bg-navbar border-secondary">
-                        <h5 class="text-white mb-0">Recent Activity</h5>
-                    </div>
-                    <div class="list-group list-group-flush">
-                        {% for message in room_messages %}
-                            <a href="{% url 'room' message.room.id %}" class="list-group-item list-group-item-action bg-card text-light border-secondary">
-                                <div class="d-flex w-100 justify-content-between">
-                                    <small>{{message.body|truncatechars:30}}</small>
-                                    <small class="text-muted">{{message.created|timesince}}</small>
-                                </div>
-                            </a>
-                        {% endfor %}
+            <div class="col-lg-3 col-md-6">
+                <div class="card h-100">
+                    <div class="card-header"><h5 class="mb-0">Private Room</h5></div>
+                    <div class="card-body d-flex flex-column text-center">
+                        <div class="display-4 text-gradient mb-2">🔒</div><h5 class="text-white">Join by Invite</h5><p class="text-muted">Enter a room using an ID and password from the host.</p>
+                        <div class="mt-auto"><a href="{% url 'join-private-room' %}" class="btn btn-outline-brand w-100">Join a Private Room</a></div>
                     </div>
                 </div>
             </div>
-
-            <div class="col-md-6">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h3 class="text-white mb-0">Public Study Rooms</h3>
-                    <a href="{% url 'create-room' %}" class="btn btn-success btn-brand">Create Room</a>
+            <div class="col-lg-3 col-md-6">
+                <div class="card h-100">
+                    <div class="card-header"><h5 class="mb-0">My Recent Activity</h5></div>
+                    <div id="recent-activity-list" class="list-group list-group-flush">
+                        {% for message in room_messages %}
+                        <a href="{% url 'room' message.room.id %}" class="list-group-item list-group-item-action"><div class="d-flex w-100 justify-content-between"><small class="text-white fw-bold">{{ message.user.username }}</small><small class="text-muted">{{ message.created|timesince }} ago</small></div><p class="mb-1 text-muted small">{{ message.body|truncatechars:40 }}</p></a>
+                        {% empty %}<div class="list-group-item text-muted small text-center">No messages posted yet.</div>{% endfor %}
+                    </div>
+                    <a href="{% url 'activity' %}" class="list-group-item list-group-item-action text-center text-primary fw-bold border-0">View all...</a>
                 </div>
-
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-3 mt-4">
+                    <h3 class="text-white mb-0">Public Study Rooms</h3><a href="{% url 'create-room' %}" class="btn btn-success">Create Room</a>
+                </div>
                 {% for room in rooms %}
-                    <div class="card bg-card border-secondary mb-3">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <h5 class="card-title mb-0">
-                                    <a href="{% url 'room' room.id %}" class="text-primary text-decoration-none">{{room.name}}</a>
-                                </h5>
-                                <span class="badge bg-badge text-light">{{room.get_study_type_display}}</span>
-                            </div>
-                            <p class="card-text text-muted mb-3">{{room.description|truncatechars:100}}</p>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <small class="text-muted">Hosted by: {{room.host.username}}</small>
-                                <small class="fw-medium text-white">{{room.participant_count}} studying</small>
-                            </div>
-                        </div>
-                    </div>
+                <div class="card mb-3"><div class="card-body"><div class="d-flex justify-content-between align-items-start mb-2"><div><h5 class="card-title mb-0"><a href="{% url 'room' room.id %}" class="text-decoration-none">{{ room.name }}</a></h5><small class="text-muted">Hosted by: {{ room.host.username }}</small></div><span class="badge bg-badge text-light">{{ room.get_study_type_display }}</span></div><p class="card-text text-muted mb-3">{{ room.description|truncatechars:100 }}</p><div class="d-flex justify-content-between align-items-center"><a href="{% url 'room' room.id %}" class="btn btn-sm btn-primary">Join Room</a><small class="fw-medium text-white">{{ room.participant_count }} studying</small></div></div></div>
                 {% empty %}
-                    <div class="alert alert-info bg-card border-info text-info">
-                        No public rooms found. <a href="{% url 'create-room' %}" class="alert-link text-gradient">Create one!</a>
-                    </div>
+                <div class="card"><div class="card-body text-center py-5"><h4 class="text-white">No Rooms Found</h4><p class="text-muted">Your search returned no results. Try creating your own room!</p><a href="{% url 'create-room' %}" class="btn btn-success mt-2">Create a New Room</a></div></div>
                 {% endfor %}
             </div>
-
-            <div class="col-md-3">
-                <div class="card bg-card border-secondary">
-                    <div class="card-header bg-navbar border-secondary">
-                        <h5 class="text-white mb-0">About ScholarSync</h5>
-                    </div>
-                    <div class="card-body">
-                        <p class="text-light mb-3">A free platform for students to study together, share knowledge, and stay motivated.</p>
-                        <div class="d-grid">
-                            <a href="{% url 'register' %}" class="btn btn-brand">Get Started</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
-    </div>
-
+    </main>
+    <footer class="text-center py-4"><p class="text-muted mb-0">&copy; {% now "Y" %} ScholarSync. All Rights Reserved.</p></footer>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        $(function() {
+            function fetchActivity() {
+                $.ajax({
+                    url: "{% url 'activity-data' %}",
+                    type: 'GET',
+                    success: function(response) {
+                        const activityList = $('#recent-activity-list');
+                        activityList.empty(); // Clear the current list
+
+                        if (response.activity && response.activity.length > 0) {
+                            response.activity.forEach(function(msg) {
+                                // Properly escape content to prevent XSS issues
+                                const body = $('<div/>').text(msg.body.substring(0, 40) + (msg.body.length > 40 ? '...' : '')).html();
+                                const username = $('<div/>').text("{{ request.user.username }}").html();
+
+                                const activityHtml = `
+                                    <a href="/room/${msg.room_id}/" class="list-group-item list-group-item-action">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <small class="text-white fw-bold">${username}</small>
+                                            <small class="text-muted">${msg.created_timesince} ago</small>
+                                        </div>
+                                        <p class="mb-1 text-muted small">${body}</p>
+                                    </a>`;
+                                activityList.append(activityHtml);
+                            });
+                        } else {
+                            activityList.append('<div class="list-group-item text-muted small text-center">No messages posted yet.</div>');
+                        }
+                    }
+                });
+            }
+
+            // Fetch activity every 10 seconds (10000 milliseconds)
+            setInterval(fetchActivity, 10000);
+
+            // Run it once on page load to ensure it's populated immediately
+            fetchActivity();
+        });
+    </script>
 </body>
 </html>

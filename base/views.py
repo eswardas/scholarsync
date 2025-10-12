@@ -8,6 +8,7 @@ from django.http import HttpResponse, JsonResponse
 from django.contrib.auth.models import User
 from django.utils import timezone
 from datetime import timedelta
+from django.template.defaultfilters import timesince as timesince_filter
 
 from .models import (
     Room, Topic, Message, Vote, StudySession, UserProfile, MessageReport
@@ -166,7 +167,7 @@ def home(request):
 
     topics = Topic.objects.exclude(name='').all()[0:5]
     room_count = rooms.count()
-    room_messages = Message.objects.filter()[0:5]
+    room_messages = Message.objects.filter(user=request.user).order_by('-created')[0:5]
 
     context = {
         'rooms': rooms,
@@ -175,6 +176,29 @@ def home(request):
         'room_messages': room_messages,
     }
     return render(request, 'base/home.html', context)
+
+
+# --- THIS IS THE NEW FUNCTION THAT WAS MISSING ---
+@login_required(login_url='login')
+def get_activity_data(request):
+    """
+    API endpoint to fetch the latest 5 personal messages for the live feed.
+    """
+    messages = Message.objects.filter(user=request.user).order_by('-created')[0:5]
+    
+    activity_data = []
+    for msg in messages:
+        activity_data.append({
+            'id': msg.id,
+            'user_id': msg.user.id,
+            'username': msg.user.username,
+            'body': msg.body,
+            'room_id': msg.room.id,
+            'room_name': msg.room.name,
+            'created_timesince': timesince_filter(msg.created),
+        })
+        
+    return JsonResponse({'activity': activity_data})
 
 
 def room(request, pk):
@@ -564,9 +588,10 @@ def topicsPage(request):
     return render(request, 'base/topics.html', {'topics': topics})
 
 
+# --- THIS IS THE CORRECTED FUNCTION ---
 @login_required(login_url='login')
 def activityPage(request):
-    room_messages = Message.objects.all()[0:5]
+    room_messages = Message.objects.filter(user=request.user).order_by('-created')
     return render(request, 'base/activity.html', {'room_messages': room_messages})
 
 

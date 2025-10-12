@@ -20,6 +20,10 @@ urlpatterns = [
     path('delete-room/<int:pk>/', views.deleteRoom, name='delete-room'),
     path('topics/', views.topicsPage, name='topics'),
     path('activity/', views.activityPage, name='activity'),
+
+    # --- FIX: ADD THIS LINE FOR LIVE ACTIVITY DATA ---
+    path('activity/data/', views.get_activity_data, name='activity-data'),
+
     path('join-private-room/', views.joinPrivateRoom, name='join-private-room'),
     path('private-room-info/', views.privateRoomInfo, name='private-room-info'),
     path('profile/<int:pk>/', views.userProfile, name='user-profile'),
