@@ -113,20 +113,34 @@
                                             <small class="text-muted ms-2">{{ message.created|timesince }} ago</small>
                                         </div>
                                         <div class="btn-group btn-group-sm">
-                                            {% if request.user.is_authenticated %}
-                                                <button class="btn btn-outline-secondary reply-btn"
-                                                        data-message-id="{{ message.id }}"
-                                                        data-username="{{ message.user.username }}">Reply</button>
-                                                <button class="btn btn-outline-warning report-btn"
-                                                        data-message-id="{{ message.id }}"
-                                                        data-username="{{ message.user.username }}">Report</button>
-                                            {% endif %}
-                                            {% if request.user == message.user or request.user.is_superuser %}
-                                                <button class="btn btn-outline-danger delete-btn" data-message-id="{{ message.id }}">
-                                                    {% if request.user.is_superuser and request.user != message.user %}Delete (Admin){% else %}Delete{% endif %}
-                                                </button>
-                                            {% endif %}
-                                        </div>
+    {% if request.user.is_authenticated %}
+        <button class="btn btn-outline-secondary reply-btn"
+                data-message-id="{{ message.id }}"
+                data-username="{{ message.user.username }}">Reply</button>
+        <button class="btn btn-outline-warning report-btn"
+                data-message-id="{{ message.id }}"
+                data-username="{{ message.user.username }}">Report</button>
+    {% endif %}
+
+    {% comment %} 
+      NEW PERMISSION CHECK: 
+      Show the delete button if:
+      1. The user is the message owner
+      2. The user is a site-wide superuser
+      3. The user is the host of the current room
+    {% endcomment %}
+    {% if request.user == message.user or request.user.is_superuser or request.user == room.host %}
+        <button class="btn btn-outline-danger delete-btn" data-message-id="{{ message.id }}">
+            {% if request.user == message.user %}
+                Delete
+            {% elif request.user == room.host %}
+                Delete (Host)
+            {% elif request.user.is_superuser %}
+                Delete (Admin)
+            {% endif %}
+        </button>
+    {% endif %}
+</div>
                                     </div>
 
                                     {% if message.parent %}

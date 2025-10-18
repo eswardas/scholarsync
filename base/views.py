@@ -25,10 +25,7 @@ from django.db.models import Q
 
 # NEW VIEW FOR THE LANDING PAGE
 def landingPage(request):
-    """
-    Renders the beautiful startup/landing page for non-authenticated users.
-    Redirects authenticated users to the main rooms dashboard.
-    """
+
     if request.user.is_authenticated:
         return redirect('home') # Redirect logged-in users to the main dashboard
     return render(request, 'base/landing.html')
@@ -36,10 +33,7 @@ def landingPage(request):
 
 @user_passes_test(lambda u: u.is_superuser, login_url='login')
 def admin_reports(request):
-    """
-    Simple moderation dashboard for message reports.
-    Superusers only.
-    """
+
     status = request.GET.get('status', 'open')  # open | reviewed | all
     q = request.GET.get('q', '').strip()
 
@@ -419,8 +413,7 @@ def deleteRoom(request, pk):
 @require_POST
 def deleteMessage(request, pk):
     message = get_object_or_404(Message, id=pk)
-
-    if request.user != message.user and not request.user.is_superuser:
+    if request.user != message.user and not request.user.is_superuser and request.user != message.room.host:
         return JsonResponse({'error': 'You are not allowed here!'}, status=403)
 
     message_id = message.id
