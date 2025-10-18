@@ -181,7 +181,7 @@ class MessageReport(models.Model):
     reporter = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='message_reports')
     message = models.ForeignKey(
-        Message, on_delete=models.CASCADE, related_name='reports')
+        Message, on_delete=models.SET_NULL, null=True, related_name='reports')
     reason = models.CharField(max_length=32, choices=REASONS)
     details = models.TextField(blank=True)
     status = models.CharField(

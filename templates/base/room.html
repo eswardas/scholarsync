@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html>
 <head>
@@ -5,41 +6,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ room.name }} - ScholarSync</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/style.css?v=6">
-
-    <style>
-        .navbar {
-            /* This z-index ensures the navbar and its dropdown appear on top of other page content */
-            z-index: 1050;
-        }
-    </style>
-    </head>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=12">
+</head>
 <body class="bg-dark">
-    <nav class="navbar navbar-expand-lg navbar-dark bg-black border-bottom border-secondary">
+    <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
         <div class="container">
-            <a class="navbar-brand fw-bold text-primary" href="{% url 'home' %}">ScholarSync</a>
+            <a class="navbar-brand d-flex align-items-center" href="{% url 'home' %}">
+                <img src="{% static 'img/default.png' %}" alt="ScholarSync" class="brand-logo me-2">
+                <span class="text-gradient">ScholarSync</span>
+            </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link text-light" href="{% url 'topics' %}">Topics</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-light" href="{% url 'activity' %}">Activity</a>
-                    </li>
+                <ul class="navbar-nav ms-3">
+                    <li class="nav-item"><a class="nav-link" href="{% url 'topics' %}">Topics</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'activity' %}">Activity</a></li>
                 </ul>
-                <ul class="navbar-nav">
+                <ul class="navbar-nav ms-auto">
                     {% if request.user.is_authenticated %}
+                        {% if request.user.is_superuser %}
+                        <li class="nav-item"><a class="nav-link text-warning" href="#">Moderation</a></li>
+                        {% endif %}
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userMenu" data-bs-toggle="dropdown">
-                                <span class="me-2 user-avatar rounded-circle bg-primary d-inline-grid place-items-center text-white" style="width:28px;height:28px;display:inline-grid;place-items:center;">
-                                    {{ request.user.username|first|upper }}
-                                </span>
+                            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <span class="me-2 placeholder-avatar">{{ request.user.username|first|upper }}</span>
                                 <span class="fw-600">{{ request.user.username }}</span>
                             </a>
-                            <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark">
+                            <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark" aria-labelledby="userMenu">
                                 <li><a class="dropdown-item" href="{% url 'user-profile' request.user.id %}">Profile</a></li>
                                 <li><a class="dropdown-item" href="{% url 'update-user' %}">Update Profile</a></li>
                                 <li><hr class="dropdown-divider"></li>
@@ -47,8 +41,8 @@
                             </ul>
                         </li>
                     {% else %}
-                        <li class="nav-item"><a class="nav-link text-light" href="{% url 'login' %}">Login</a></li>
-                        <li class="nav-item"><a class="nav-link text-light" href="{% url 'register' %}">Register</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Login</a></li>
+                        <li class="nav-item"><a class="nav-link btn btn-sm btn-brand ms-2 px-3" href="{% url 'register' %}">Register</a></li>
                     {% endif %}
                 </ul>
             </div>
@@ -74,7 +68,7 @@
                     {% endif %}
                 </div>
 
-                <div class="card bg-dark border-secondary mb-4">
+                <div class="card mb-4">
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-6">
@@ -83,7 +77,7 @@
                             </div>
                             <div class="col-md-6">
                                 <p class="text-light mb-2"><strong>Created:</strong> {{ room.created|timesince }} ago</p>
-                                <p class="text-light mb-0"><strong>Last Active:</strong> {{ room.updated|timesince }} ago</p>
+                                <p class="text-light mb-0"><strong>Last Active:</strong> <span id="last-active-time">{{ room.updated|timesince }}</span> ago</p>
                             </div>
                         </div>
                         {% if room.description %}
@@ -98,14 +92,14 @@
                     </div>
                 </div>
 
-                <div class="card bg-dark border-secondary mb-4">
-                    <div class="card-header bg-black border-secondary">
+                <div class="card mb-4">
+                    <div class="card-header">
                         <h5 class="text-white mb-0">Discussion</h5>
                     </div>
                     <div class="card-body p-0">
                         <div class="p-3" id="chat-messages" style="max-height: 500px; overflow-y: auto;">
                             {% for message in room_messages %}
-                                <div class="message bg-black border border-secondary rounded p-3 mb-3"
+                                <div class="message"
                                      id="message-{{ message.id }}"
                                      data-message-id="{{ message.id }}"
                                      data-user-id="{{ message.user.id }}">
@@ -189,43 +183,43 @@
 
                 {% if request.user.is_authenticated %}
                     <input type="hidden" id="csrf-token" value="{{ csrf_token }}">
-                    <div id="reply-context" class="alert alert-info bg-dark border-info text-info d-none py-2 px-3 small mb-2">
+                    <div id="reply-context" class="alert alert-info d-none py-2 px-3 small mb-2">
                         Replying to <a id="reply-user-link" href="#" class="text-primary">@user</a>:
                         <span id="reply-snippet" class="text-muted"></span>
                         <button type="button" id="cancel-reply" class="btn btn-sm btn-outline-secondary ms-2">Cancel</button>
                     </div>
 
-                    <div class="card bg-dark border-secondary">
+                    <div class="card">
                         <div class="card-body">
                             <form id="message-form" method="POST" enctype="multipart/form-data">
                                 {% csrf_token %}
                                 <input type="hidden" name="parent_id" id="parent_id" value="">
                                 <div class="mb-3">
-                                    <textarea name="body" id="chat-message-input" class="form-control bg-black text-light border-secondary" placeholder="Share your thoughts..." rows="3"></textarea>
+                                    <textarea name="body" id="chat-message-input" class="form-control" placeholder="Share your thoughts..." rows="3"></textarea>
                                 </div>
                                 <div class="mb-3">
-                                    <label for="file_attachment" class="form-label text-light">Attach File (PDF, Image, Video, Audio)</label>
-                                    <input type="file" class="form-control bg-dark text-light border-secondary" id="file_attachment" name="file_attachment">
+                                    <label for="file_attachment" class="form-label">Attach File (PDF, Image, Video, Audio)</label>
+                                    <input type="file" class="form-control" id="file_attachment" name="file_attachment">
                                 </div>
                                 <button type="submit" id="chat-message-submit" class="btn btn-primary w-100">Send Message</button>
                             </form>
                         </div>
                     </div>
                 {% else %}
-                    <div class="alert alert-warning bg-dark border-warning text-warning">
+                    <div class="alert alert-warning">
                         <p class="mb-0">Please <a href="{% url 'login' %}" class="text-primary">login</a> to participate in discussions.</p>
                     </div>
                 {% endif %}
             </div>
 
             <div class="col-md-4">
-                <div class="card bg-dark border-secondary">
-                    <div class="card-header bg-black border-secondary">
+                <div class="card">
+                    <div class="card-header">
                         <h5 class="text-white mb-0">Participants (<span id="participants-count-display">{{ participants.count }}</span>)</h5>
                     </div>
                     <div class="list-group list-group-flush" id="participants-list">
                         {% for participant in participants %}
-                            <a href="{% url 'user-profile' participant.id %}" class="list-group-item list-group-item-action bg-dark text-light border-secondary d-flex justify-content-between align-items-center">
+                            <a href="{% url 'user-profile' participant.id %}" data-participant-id="{{ participant.id }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
                                 {{ participant.username }}
                                 {% if participant.is_superuser %}
                                     <span class="badge bg-danger">ADMIN</span>
@@ -240,16 +234,16 @@
 
     <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
         <div class="modal-dialog">
-            <div class="modal-content bg-dark text-light">
-                <div class="modal-header border-secondary">
+            <div class="modal-content">
+                <div class="modal-header">
                     <h5 class="modal-title" id="deleteModalLabel">Confirm Deletion</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <p>Are you sure you want to delete this message?</p>
                     <p class="text-muted small">This action cannot be undone.</p>
                 </div>
-                <div class="modal-footer border-secondary">
+                <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete Message</button>
                 </div>
@@ -259,16 +253,16 @@
 
     <div class="modal fade" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
         <div class="modal-dialog">
-            <div class="modal-content bg-dark text-light">
-                <div class="modal-header border-secondary">
+            <div class="modal-content">
+                <div class="modal-header">
                     <h5 class="modal-title" id="reportModalLabel">Report Message</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <p class="mb-3">Reporting message by <strong id="reportUser">@user</strong></p>
                     <div class="mb-3">
                         <label class="form-label">Reason</label>
-                        <select id="reportReason" class="form-control bg-black text-light border-secondary">
+                        <select id="reportReason" class="form-select">
                             <option value="spam">Spam</option>
                             <option value="abuse">Harassment/Abuse</option>
                             <option value="inappropriate">Inappropriate Content</option>
@@ -277,10 +271,10 @@
                     </div>
                     <div>
                         <label class="form-label">Details (optional)</label>
-                        <textarea id="reportDetails" class="form-control bg-black text-light border-secondary" rows="3" placeholder="Add any details..."></textarea>
+                        <textarea id="reportDetails" class="form-control" rows="3" placeholder="Add any details..."></textarea>
                     </div>
                 </div>
-                <div class="modal-footer border-secondary">
+                <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="button" class="btn btn-outline-warning" id="confirmReportBtn">Submit Report</button>
                 </div>
@@ -313,6 +307,22 @@
 
     // Main application logic
     $(function () {
+        const chatContainer = $('#chat-messages');
+
+        // Re-order messages on page load to ensure correct chronological order
+        if (chatContainer.length > 0) {
+            const messages = chatContainer.children('.message').get();
+            messages.sort(function(a, b) {
+                const idA = parseInt($(a).data('message-id'));
+                const idB = parseInt($(b).data('message-id'));
+                return idA - idB;
+            });
+            $.each(messages, function(i, message) {
+                chatContainer.append(message);
+            });
+            chatContainer.scrollTop(chatContainer[0].scrollHeight);
+        }
+
         const roomId = "{{ room.id }}";
         const csrfToken = $('#csrf-token').val();
         const IS_AUTH = {{ request.user.is_authenticated|yesno:"true,false" }};
@@ -347,7 +357,6 @@
             $('#reportDetails').val('');
         });
 
-        // Compute last message id on load
         const $messages = $('.message');
         if ($messages.length > 0) {
             lastMessageId = Math.max(...$messages.map(function () {
@@ -355,30 +364,24 @@
             }).get());
         }
 
-        // Reply handler
         $(document).on('click', '.reply-btn', function () {
             if (!IS_AUTH) return window.location.href = '/login/';
-
             const msgId = $(this).data('message-id');
             const username = $(this).data('username');
             const userId = $(`#message-${msgId}`).data('user-id') || '';
             const bodyText = ($(`#message-${msgId} .message-body`).text() || '').trim().slice(0, 120);
-
             $('#parent_id').val(msgId);
             $('#reply-user-link').text(`@${username}`).attr('href', userId ? `/profile/${userId}/` : '#');
             $('#reply-snippet').text(`“${bodyText}${bodyText.length >= 120 ? '…' : ''}”`);
             $('#reply-context').removeClass('d-none');
-
             const $input = $('#chat-message-input');
             if (!$input.val().startsWith(`@${username} `)) {
                 $input.val(`@${username} ` + $input.val());
             }
             $input.focus();
-
             $('html, body').animate({ scrollTop: $('#message-form').offset().top - 100 }, 200);
         });
 
-        // Cancel reply
         $('#cancel-reply').on('click', function () {
             const $input = $('#chat-message-input');
             const mention = $('#reply-user-link').text() + ' ';
@@ -389,13 +392,11 @@
             $('#reply-context').addClass('d-none');
         });
 
-        // Open confirm delete
         $(document).on('click', '.delete-btn', function () {
             currentMessageId = $(this).data('message-id');
             deleteModal.show();
         });
 
-        // Report flow
         $(document).on('click', '.report-btn', function () {
             if (!IS_AUTH) return window.location.href = '/login/';
             reportMessageId = $(this).data('message-id');
@@ -410,24 +411,20 @@
             $.ajax({
                 url: `/report/${reportMessageId}/`,
                 type: 'POST',
-                data: {
-                    reason: $('#reportReason').val(),
-                    details: $('#reportDetails').val()
-                },
+                data: { reason: $('#reportReason').val(), details: $('#reportDetails').val() },
                 success: function () {
                     alert('Report submitted. Thank you!');
                     safeHideModal(reportModal, reportModalEl);
-                    $btn.prop('disabled', false).text('Submit Report');
                 },
                 error: function () {
                     alert('Error submitting report');
                     safeHideModal(reportModal, reportModalEl);
-                    $btn.prop('disabled', false).text('Submit Report');
                 }
+            }).always(function() {
+                $btn.prop('disabled', false).text('Submit Report');
             });
         });
 
-        // Poll new messages/participants
         setInterval(function () {
             $.ajax({
                 url: `/room/${roomId}/data/`,
@@ -435,6 +432,7 @@
                 data: { last_id: lastMessageId },
                 success: function (response) {
                     if (response.messages && response.messages.length > 0) {
+                        const isScrolledToBottom = chatContainer[0].scrollHeight - chatContainer.scrollTop() - chatContainer.outerHeight() < 30;
                         response.messages.forEach(function (msg) {
                             if ($(`#message-${msg.id}`).length === 0) {
                                 let fileHtml = '';
@@ -449,85 +447,53 @@
                                         fileHtml = `<div class="mb-2"><a class="btn btn-outline-primary" href="${msg.file_attachment}" download>📄 Download ${msg.file_name}</a></div>`;
                                     }
                                 }
-
-                                const replyInfo = msg.parent_id ? `
-                                    <div class="small text-muted mb-2">
-                                        Replying to <a href="/profile/${msg.parent_id ? '' : ''}" class="text-primary text-decoration-none">@${msg.parent_username}</a>:
-                                        “${msg.parent_excerpt || ''}”
-                                    </div>` : '';
-
-                                const actions = IS_AUTH ? `
-                                    <div class="btn-group btn-group-sm">
-                                        <button class="btn btn-outline-secondary reply-btn" data-message-id="${msg.id}" data-username="${msg.username}">Reply</button>
-                                        <button class="btn btn-outline-warning report-btn" data-message-id="${msg.id}" data-username="${msg.username}">Report</button>
-                                        ${(msg.is_owner || msg.is_admin) ? `
-                                            <button class="btn btn-outline-danger delete-btn" data-message-id="${msg.id}">
-                                                ${(msg.is_admin && !msg.is_owner) ? 'Delete (Admin)' : 'Delete'}
-                                            </button>` : ``}
-                                    </div>` : (msg.is_owner || msg.is_admin) ? `
-                                        <div class="btn-group btn-group-sm">
-                                            <button class="btn btn-outline-danger delete-btn" data-message-id="${msg.id}">
-                                                ${(msg.is_admin && !msg.is_owner) ? 'Delete (Admin)' : 'Delete'}
-                                            </button>
-                                        </div>` : '';
-
-                                const html = `
-                                    <div class="message bg-black border border-secondary rounded p-3 mb-3" id="message-${msg.id}" data-message-id="${msg.id}" data-user-id="${msg.user_id}">
-                                        <div class="d-flex justify-content-between align-items-start mb-2">
-                                            <div class="d-flex align-items-center">
-                                                <strong><a href="/profile/${msg.user_id}/" class="text-primary text-decoration-none">${msg.username}</a></strong>
-                                                <small class="text-muted ms-2">just now</small>
-                                            </div>
-                                            ${actions}
-                                        </div>
-                                        ${replyInfo}
-                                        <p class="text-light mb-2 message-body">${msg.body || ''}</p>
-                                        ${fileHtml}
-                                        <div class="d-flex gap-2">
-                                            <button class="btn btn-sm ${msg.user_vote === 'like' ? 'btn-primary' : 'btn-outline-primary'} like-btn" data-message-id="${msg.id}">
-                                                👍 <span class="like-count">${msg.like_count}</span>
-                                            </button>
-                                            <button class="btn btn-sm ${msg.user_vote === 'dislike' ? 'btn-danger' : 'btn-outline-danger'} dislike-btn" data-message-id="${msg.id}">
-                                                👎 <span class="dislike-count">${msg.dislike_count}</span>
-                                            </button>
-                                        </div>
-                                    </div>`;
-                                $('#chat-messages').append(html);
+                                const replyInfo = msg.parent_id ? `<div class="small text-muted mb-2">Replying to <a href="/profile/${msg.parent_id ? '' : ''}" class="text-primary text-decoration-none">@${msg.parent_username}</a>: “${msg.parent_excerpt || ''}”</div>` : '';
+                                const actions = IS_AUTH ? `<div class="btn-group btn-group-sm"><button class="btn btn-outline-secondary reply-btn" data-message-id="${msg.id}" data-username="${msg.username}">Reply</button><button class="btn btn-outline-warning report-btn" data-message-id="${msg.id}" data-username="${msg.username}">Report</button>${(msg.is_owner || msg.is_admin) ? `<button class="btn btn-outline-danger delete-btn" data-message-id="${msg.id}">${(msg.is_admin && !msg.is_owner) ? 'Delete (Admin)' : 'Delete'}</button>` : ``}</div>` : (msg.is_owner || msg.is_admin) ? `<div class="btn-group btn-group-sm"><button class="btn btn-outline-danger delete-btn" data-message-id="${msg.id}">${(msg.is_admin && !msg.is_owner) ? 'Delete (Admin)' : 'Delete'}</button></div>` : '';
+                                const html = `<div class="message" id="message-${msg.id}" data-message-id="${msg.id}" data-user-id="${msg.user_id}"><div class="d-flex justify-content-between align-items-start mb-2"><div class="d-flex align-items-center"><strong><a href="/profile/${msg.user_id}/" class="text-primary text-decoration-none">${msg.username}</a></strong><small class="text-muted ms-2">just now</small></div>${actions}</div>${replyInfo}<p class="text-light mb-2 message-body">${msg.body || ''}</p>${fileHtml}<div class="d-flex gap-2"><button class="btn btn-sm ${msg.user_vote === 'like' ? 'btn-primary' : 'btn-outline-primary'} like-btn" data-message-id="${msg.id}">👍 <span class="like-count">${msg.like_count}</span></button><button class="btn btn-sm ${msg.user_vote === 'dislike' ? 'btn-danger' : 'btn-outline-danger'} dislike-btn" data-message-id="${msg.id}">👎 <span class="dislike-count">${msg.dislike_count}</span></button></div></div>`;
+                                chatContainer.append(html);
                             }
                         });
                         lastMessageId = response.last_id;
-                        $('#chat-messages').scrollTop($('#chat-messages')[0].scrollHeight);
+                        if (isScrolledToBottom) {
+                           chatContainer.scrollTop(chatContainer[0].scrollHeight);
+                        }
                     }
-
                     if (response.participants) {
                         const $list = $('#participants-list');
-                        $list.empty();
+                        const existingParticipantIds = new Set();
+                        $list.find('a[data-participant-id]').each(function() { existingParticipantIds.add($(this).data('participant-id')); });
+                        const newParticipantIds = new Set(response.participants.map(p => p.id));
+                        $list.find('a[data-participant-id]').each(function() {
+                            const participantId = $(this).data('participant-id');
+                            if (!newParticipantIds.has(participantId)) { $(this).remove(); }
+                        });
                         response.participants.forEach(function (p) {
-                            $list.append(`
-                                <a href="/profile/${p.id}/" class="list-group-item list-group-item-action bg-dark text-light border-secondary d-flex justify-content-between align-items-center">
-                                    ${p.username}
-                                    ${p.is_superuser ? '<span class="badge bg-danger">ADMIN</span>' : ''}
-                                </a>`);
+                            if (!existingParticipantIds.has(p.id)) {
+                                const participantHtml = `<a href="/profile/${p.id}/" data-participant-id="${p.id}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">${p.username}${p.is_superuser ? '<span class="badge bg-danger">ADMIN</span>' : ''}</a>`;
+                                $list.append(participantHtml);
+                            }
                         });
                         $('#participant-count').text(response.participants.length);
                         $('#participants-count-display').text(response.participants.length);
+                    }
+                    // FIX: Update the 'Last Active' time from the AJAX response
+                    if (response.last_active_timesince) {
+                        $('#last-active-time').text(response.last_active_timesince);
                     }
                 }
             });
         }, 2000);
 
-        // Send message
         $('#message-form').on('submit', function (e) {
             e.preventDefault();
             const formData = new FormData(this);
             const text = ($('#chat-message-input').val() || '').trim();
-            const hasFile = !!formData.get('file_attachment');
-
+            const fileInput = $('#file_attachment')[0];
+            const hasFile = fileInput.files && fileInput.files.length > 0;
             if (!text && !hasFile) {
                 alert('Please enter a message or attach a file');
                 return;
             }
-
             $.ajax({
                 url: window.location.href,
                 type: 'POST',
@@ -546,36 +512,31 @@
             });
         });
 
-        // Confirm delete
         $('#confirmDeleteBtn').on('click', function () {
             if (!currentMessageId) return;
             const $btn = $(this).prop('disabled', true).text('Deleting...');
-
             $.ajax({
                 url: `/delete-message/${currentMessageId}/`,
                 type: 'POST',
                 success: function () {
-                    $(`#message-${currentMessageId}`).fadeOut(120, function () {
-                        $(this).remove();
-                    });
+                    $(`#message-${currentMessageId}`).fadeOut(120, function () { $(this).remove(); });
                     safeHideModal(deleteModal, deleteModalEl);
                     currentMessageId = null;
-                    $btn.prop('disabled', false).text('Delete Message');
                 },
                 error: function () {
                     alert('Error deleting message');
                     safeHideModal(deleteModal, deleteModalEl);
-                    $btn.prop('disabled', false).text('Delete Message');
                 }
+            }).always(function() {
+                $btn.prop('disabled', false).text('Delete Message');
             });
         });
 
-        // Like/Dislike (delegated)
         $(document).on('click', '.like-btn, .dislike-btn', function () {
+            if (!IS_AUTH) return window.location.href = '/login/';
             const $btn = $(this);
             const id = $btn.data('message-id');
             const voteType = $btn.hasClass('like-btn') ? 'like' : 'dislike';
-
             $.ajax({
                 url: `/vote/${id}/`,
                 type: 'POST',
@@ -584,13 +545,10 @@
                     const $row = $btn.closest('.message');
                     const $likeBtn = $row.find('.like-btn');
                     const $dislikeBtn = $row.find('.dislike-btn');
-
                     $row.find('.like-count').text(res.like_count);
                     $row.find('.dislike-count').text(res.dislike_count);
-
                     $likeBtn.removeClass('btn-primary').addClass('btn-outline-primary');
                     $dislikeBtn.removeClass('btn-danger').addClass('btn-outline-danger');
-
                     if (res.action !== 'removed') {
                         if (res.vote_type === 'like') {
                             $likeBtn.removeClass('btn-outline-primary').addClass('btn-primary');
